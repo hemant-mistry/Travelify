@@ -1,5 +1,9 @@
+import Navbar from "./components/Navbar";
+
 function App() {
   return (
+    <>
+    <Navbar/>
     <div class="p-4 m-auto border-2 rounded-lg bg-slate-800 text-white">
       <h1 class="text-3xl font-bold">Hello world!</h1>
       <p class="mt-5">
@@ -14,6 +18,7 @@ function App() {
 
       <button className="btn btn-primary">Primary</button>
     </div>
+    </>
   );
 }
 export default App;
