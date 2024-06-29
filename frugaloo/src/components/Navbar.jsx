@@ -7,7 +7,7 @@ const handleAvatarClick = () => {
   };
   return (
     <>
-    <div class="navbar bg-base-100">
+    <div class="navbar bg-base-100 rounded-md">
   <div class="flex-1">
     <a class="btn btn-ghost text-xl">Frugaloo</a>
   </div>
