@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: frontend/dist # This should be your distribution path, not the root path
+          path: frugaloo/dist # This should be your distribution path, not the root path
           if-no-files-found: warn
  
   # Deploy the application to Azure
