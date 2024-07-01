@@ -1,9 +1,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import sendIcon from "../assets/sendicon.png"; // Adjust the path based on your folder structure
 import attachmentIcon from "../assets/attachmenticon.png";
-import axios from "axios";
 
-function PromptInput({ onSendMessage }) {
+function PromptInput({ onSendMessage, setLoading }) {
   const textareaRef = useRef(null);
   const [message, setMessage] = useState("");
 
@@ -17,28 +16,17 @@ function PromptInput({ onSendMessage }) {
     adjustHeight(); // Adjust height on initial render
   }, []);
 
-  const handleSendMessage = async () => {
-    if (message) {
-    
-      // Call the API
-      try {
-        const response = await axios.post("http://127.0.0.1:8000/generate-message/", {
-          user_name: "Hemant",
-          message: message,
-        });
-  
-        const receivedMessage = response.data.response;
-        
-        // Pass the sent and received messages to the parent component
-        onSendMessage(message, receivedMessage);
-  
-        // Clear the textarea
-        setMessage("");
-        textareaRef.current.style.height = "auto";
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
+  const handleSendMessage = () => {
+    if (message.trim() === "") {
+      return; // Do not proceed if message is empty
     }
+
+    // Pass user message to parent component
+    onSendMessage(message);
+
+    // Clear the textarea and reset height
+    setMessage("");
+    textareaRef.current.style.height = "auto";
   };
 
   return (

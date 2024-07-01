@@ -2,6 +2,7 @@ import { useState } from "react";
 import Navbar from "./components/Navbar";
 import PromptInput from "./components/PromptInput";
 import GeminiIcon from "./assets/GeminiIcon.png";
+import axios from "axios";
 
 function truncateText(text, maxLength) {
   if (text.length > maxLength) {
@@ -13,25 +14,50 @@ function truncateText(text, maxLength) {
 function App() {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(false); // New state variable
+  const [loading, setLoading] = useState(false); // Loading state
 
-  const handleSendMessage = (userMessage, responseMessage) => {
-    setIsLoading(true); // Set loading state to true
-    const newMessages = [];
-    if (userMessage !== null) {
-      newMessages.push({ type: "user", text: userMessage });
-    }
-    if (responseMessage !== null) {
-      newMessages.push({ type: "response", text: responseMessage });
-      setIsLoading(false); // Set loading state to false once response received
-    }
-    
+  const handleSendMessage = async (userMessage) => {
+    setIsFirstMessage(false); // Update isFirstMessage after first interaction
+    setLoading(true); // Set loading state when sending message
+
+    // Add user message immediately
     setMessages((prevMessages) => [
       ...prevMessages,
-      ...newMessages,
+      { type: "user", text: userMessage },
+      { type: "response", text: "" }, // Placeholder for response message
     ]);
-    
-    setIsFirstMessage(false);
+
+    try {
+      // Call the API
+      const response = await axios.post(
+        "http://127.0.0.1:8000/generate-message/",
+        {
+          user_name: "Hemant",
+          message: userMessage,
+        }
+      );
+
+      const receivedMessage = response.data.response;
+
+      // Update the response message in messages
+      setMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages];
+        const responseIndex = updatedMessages.findIndex(
+          (msg) => msg.type === "response" && msg.text === ""
+        );
+        if (responseIndex !== -1) {
+          updatedMessages[responseIndex] = {
+            type: "response",
+            text: receivedMessage,
+          };
+        }
+        return updatedMessages;
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setLoading(false); // Reset loading state after message sent
+    }
   };
 
   // Example button texts
@@ -79,33 +105,40 @@ function App() {
       ) : (
         <div className="flex flex-col h-50 justify-center items-center">
           <div className="overflow-y-auto w-[60vw] h-[70vh] sm:h-[40vh] sm:w-[30vw] lg:h-[65vh] lg:w-[60vw] p-4 mt-10 no-scrollbar">
-            {isLoading ? (
-              <div className="text-center">Loading...</div> // Display loading message
-            ) : (
-              messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex items-start justify-start space-x-4 mb-4 ${
-                    msg.type === "user" ? "user-message" : "copilot-response"
-                  }`}
-                >
-                  <div className="avatar">
-                    <div className="w-8 rounded-full">
-                      {msg.type === "user" ? (
-                        <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg" alt="user avatar" />
-                      ) : (
-                        <img src={GeminiIcon} alt="Gemini icon" />
-                      )}
-                    </div>
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex items-start justify-start space-x-4 mb-4 ${
+                  msg.type === "user" ? "user-message" : "copilot-response"
+                }`}
+              >
+                <div className="avatar">
+                  <div className="w-8 rounded-full">
+                    {msg.type === "user" ? (
+                      <img
+                        src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
+                        alt="User"
+                      />
+                    ) : (
+                      <img src={GeminiIcon} alt="Bot" />
+                    )}
                   </div>
-                  <div>{msg.text}</div>
                 </div>
-              ))
-            )}
+                <div>
+                  {msg.type === "response" && msg.text === "" ? (
+                    <span className="loading loading-dots loading-md"></span>
+                  ) : (
+                    msg.text
+                  )}
+                </div>
+              </div>
+            ))}
+           
+            
           </div>
         </div>
       )}
-      <PromptInput onSendMessage={handleSendMessage} />
+      <PromptInput onSendMessage={handleSendMessage} setLoading={setLoading} />
     </>
   );
 }
