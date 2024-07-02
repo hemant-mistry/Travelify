@@ -1,6 +1,9 @@
 import { useState } from "react";
 import Navbar from "./components/Navbar";
 import PromptInput from "./components/PromptInput";
+import GeminiIcon from "./assets/GeminiIcon.png";
+import axios from "axios";
+import ReactMarkdown from "react-markdown";
 
 function truncateText(text, maxLength) {
   if (text.length > maxLength) {
@@ -11,12 +14,62 @@ function truncateText(text, maxLength) {
 
 function App() {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
-  
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false); // Loading state
+
+  const handleSendMessage = async (userMessage) => {
+    setIsFirstMessage(false); // Update isFirstMessage after first interaction
+    setLoading(true); // Set loading state when sending message
+
+    // Add user message immediately
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { type: "user", text: userMessage },
+      { type: "response", text: "" }, // Placeholder for response message
+    ]);
+
+    try {
+      // Call the API
+      const response = await axios.post(
+        "http://127.0.0.1:8000/generate-message/",
+        {
+          user_name: "Hemant",
+          message: userMessage,
+        }
+      );
+
+      const receivedMessage = response.data.response;
+
+      // Update the response message in messages
+      setMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages];
+        const responseIndex = updatedMessages.findIndex(
+          (msg) => msg.type === "response" && msg.text === ""
+        );
+        if (responseIndex !== -1) {
+          updatedMessages[responseIndex] = {
+            type: "response",
+            text: receivedMessage,
+          };
+        }
+        return updatedMessages;
+      });
+    } catch (error) {
+      console.error("Error sending message:", error);
+    } finally {
+      setLoading(false); // Reset loading state after message sent
+    }
+  };
+
   // Example button texts
-  const button1Text = "Suggest European cities for history, nightlife, and nature.";
-  const button2Text = "Plan a $2000 week-long Japan trip, including flights, stay, food, and activities.";
-  const button3Text = "Create a 10-day Southeast Asia itinerary for Thailand, Vietnam, and Cambodia.";
-  const button4Text = "What should I pack for a two-week trip to New Zealand in November?";
+  const button1Text =
+    "Suggest European cities for history, nightlife, and nature.";
+  const button2Text =
+    "Plan a $2000 week-long Japan trip, including flights, stay, food, and activities.";
+  const button3Text =
+    "Create a 10-day Southeast Asia itinerary for Thailand, Vietnam, and Cambodia.";
+  const button4Text =
+    "What should I pack for a two-week trip to New Zealand in November?";
 
   return (
     <>
@@ -51,27 +104,42 @@ function App() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col h-full">
-          <div className="overflow-y-auto h-[70vh] sm:h-[40vh] lg:h-[75vh] pl-4 pr-4">
-            <div className="chat chat-end mx-4 mt-5">
-              <div className="chat-bubble p-4 rounded-lg mb-2">
-                You underestimate my power!
-              </div>
-            </div>
-            <div className="chat chat-start mt-5 mx-4">
-              <div className="chat-bubble p-4 rounded-lg mb-2">
-                {/* Your long content here */}
-                <div className="welcome-message">
-                  <p>Welcome back, John</p>
-                  <br />
-                  Where are you planning to go?
+        <div className="flex flex-col h-50 justify-center items-center">
+          <div className="overflow-y-auto w-[60vw] h-[70vh] sm:h-[40vh] sm:w-[30vw] lg:h-[65vh] lg:w-[60vw] p-4 mt-10 no-scrollbar">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex items-start justify-start space-x-4 mb-4 ${
+                  msg.type === "user" ? "user-message" : "copilot-response"
+                }`}
+              >
+                <div className="avatar">
+                  <div className="w-8 rounded-full">
+                    {msg.type === "user" ? (
+                      <img
+                        src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
+                        alt="User"
+                      />
+                    ) : (
+                      <img src={GeminiIcon} alt="Bot" />
+                    )}
+                  </div>
+                </div>
+                <div>
+                  {msg.type === "response" && msg.text === "" ? (
+                    <span className="loading loading-dots loading-md"></span>
+                  ) : (
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                  )}
                 </div>
               </div>
-            </div>
+            ))}
+           
+            
           </div>
         </div>
       )}
-      <PromptInput />
+      <PromptInput onSendMessage={handleSendMessage} setLoading={setLoading} />
     </>
   );
 }
