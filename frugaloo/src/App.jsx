@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import PromptInput from "./components/PromptInput";
 import GeminiIcon from "./assets/GeminiIcon.png";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
 
 function truncateText(text, maxLength) {
   if (text.length > maxLength) {
@@ -128,7 +129,7 @@ function App() {
                   {msg.type === "response" && msg.text === "" ? (
                     <span className="loading loading-dots loading-md"></span>
                   ) : (
-                    msg.text
+                    <ReactMarkdown>{msg.text}</ReactMarkdown>
                   )}
                 </div>
               </div>

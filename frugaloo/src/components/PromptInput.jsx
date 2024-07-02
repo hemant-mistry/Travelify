@@ -29,6 +29,13 @@ function PromptInput({ onSendMessage, setLoading }) {
     textareaRef.current.style.height = "auto";
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // Prevent default behavior (new line)
+      handleSendMessage(); // Call sendMessage function
+    }
+  };
+
   return (
     <div className="fixed bottom-0 w-full p-4 flex flex-col items-center">
       <div className="relative flex w-full justify-center mb-4 flex items-end">
@@ -43,6 +50,7 @@ function PromptInput({ onSendMessage, setLoading }) {
           onInput={adjustHeight}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={handleKeyPress} // Added key down event handler
         ></textarea>
         <button className="btn btn-square ml-2" onClick={handleSendMessage}>
           <img src={sendIcon} alt="Send Icon" className="h-6 w-6" />
