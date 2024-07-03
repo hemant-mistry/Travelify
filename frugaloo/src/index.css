@@ -30,4 +30,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* Ensure scrollbar is hidden universally */
 
+.navbar.scrolled {
+  background-color: black;
+}
