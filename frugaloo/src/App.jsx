@@ -3,6 +3,7 @@ import Home from "./components/Home";
 import Navbar from "./components/Navbar";
 import Login from "./components/Login";
 import SignUp from "./components/SignUp";  // Import SignUp component
+import PlanInput from './components/PlanInput';
 import Plan from './components/Plan';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/planinput" element = {<PlanInput/>}/>
           <Route path="/plan" element = {<Plan/>}/>
         </Routes>
       </div>
