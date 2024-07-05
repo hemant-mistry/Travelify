@@ -1,5 +1,5 @@
 import HeroImage from '../assets/NYC.png';
-import Navbar from './Navbar';
+
 
 function Home() {
   return (

@@ -12,10 +12,12 @@ const supabase = createClient('https://gudqtcrukrjdjipnavsn.supabase.co', 'eyJhb
 
 function App() {
   const [session, setSession] = useState(null);
-
+  const [loggedInUser, setLoggedInUser] = useState(null);
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
+      const { data: { user } } = await supabase.auth.getUser()
+      setLoggedInUser(user.email)
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -32,7 +34,7 @@ function App() {
   return (
     <BrowserRouter>
       <div>
-        <Navbar />
+        <Navbar loggedInUser = {loggedInUser}/>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

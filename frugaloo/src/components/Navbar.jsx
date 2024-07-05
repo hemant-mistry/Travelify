@@ -2,24 +2,24 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import helpicon from "../assets/helpicon.png";
 import loginIcon from "../assets/loginIcon.png";
+import { createClient } from "@supabase/supabase-js";
 
-function Navbar() {
+const supabase = createClient(
+  "https://gudqtcrukrjdjipnavsn.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1ZHF0Y3J1a3JqZGppcG5hdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQxNDA3ODgsImV4cCI6MjAyOTcxNjc4OH0.wlopJVGLMcro2mRHsbFGhV0YdMa61w8w_MeA8NFB8a0"
+);
+
+// eslint-disable-next-line react/prop-types
+function Navbar({ loggedInUser }) { // Destructure loggedInUser
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // State to track login status
-
+ 
   const handleAvatarClick = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
-  const handleLogin = () => {
-    // Logic to handle login (e.g., set isLoggedIn to true)
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    // Logic to handle logout (e.g., set isLoggedIn to false)
-    setIsLoggedIn(false);
-    setDropdownOpen(false); // Close dropdown on logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
   };
 
   return (
@@ -37,26 +37,21 @@ function Navbar() {
               <img src={helpicon} alt="Help Icon" className="h-6 w-6" />
             </button>
           </div>
-          {!isLoggedIn && ( // Show login button if not logged in
+          {!loggedInUser && ( // Show login button if not logged in
             <Link to="/login" className="btn btn-ghost btn-md">
               <img src={loginIcon} alt="Login Icon" className="h-6 w-6" />
               Login/SignUp
             </Link>
           )}
-          {isLoggedIn && ( // Show avatar if logged in
+          {loggedInUser && ( // Show avatar if logged in
             <div className="dropdown dropdown-end">
               <div
                 tabIndex="0"
                 role="button"
-                className="btn btn-ghost btn-circle avatar"
+                className="btn btn-circle avatar"
                 onClick={handleAvatarClick}
               >
-                <div className="w-10 rounded-full">
-                  <img
-                    alt="Avatar"
-                    src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
-                  />
-                </div>
+                {loggedInUser[0]}  
               </div>
               <ul
                 tabIndex="0"
