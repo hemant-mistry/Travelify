@@ -4,10 +4,8 @@ import helpicon from "../assets/helpicon.png";
 import loginIcon from "../assets/loginIcon.png";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  "https://gudqtcrukrjdjipnavsn.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd1ZHF0Y3J1a3JqZGppcG5hdnNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTQxNDA3ODgsImV4cCI6MjAyOTcxNjc4OH0.wlopJVGLMcro2mRHsbFGhV0YdMa61w8w_MeA8NFB8a0"
-);
+const supabase = createClient('https://wqbvxqxuiwhmretkcjaw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s')
+
 
 // eslint-disable-next-line react/prop-types
 function Navbar({ loggedInUser }) { // Destructure loggedInUser
@@ -51,7 +49,7 @@ function Navbar({ loggedInUser }) { // Destructure loggedInUser
                 className="btn btn-circle avatar"
                 onClick={handleAvatarClick}
               >
-                {loggedInUser[0]}  
+                {loggedInUser.email[0]}  
               </div>
               <ul
                 tabIndex="0"
