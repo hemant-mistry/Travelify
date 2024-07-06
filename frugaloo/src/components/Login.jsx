@@ -1,57 +1,70 @@
-import { Link, useNavigate } from 'react-router-dom';  // Import useNavigate if using React Router v6
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+import { Auth } from "@supabase/auth-ui-react";
+
+
+const supabase = createClient('https://wqbvxqxuiwhmretkcjaw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s')
+
 
 function Login() {
-  // Initialize navigate hook
-  const navigate = useNavigate();  // For React Router v6, use useNavigate()
+  const [session, setSession] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(null);
 
-  // Handle SignUp button click
-  const handleSignUpClick = () => {
-    navigate('/signup');  // Navigate to /signup route
-  };
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setLoggedInUser(user.email);
+      }
+    });
 
-  return (
-    <>
-      <div className="hero min-h-screen fixed">
-        <div className="hero-content" style={{ marginTop: "-10rem" }}>
-          <div className="card bg-base-100 md:w-96 sm:w-26 max-w-sm sm:w-[25] shadow-2xl">
-            <form className="card-body">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input
-                  type="email"
-                  placeholder="email"
-                  className="input input-bordered input-sm"
-                  required
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Password</span>
-                </label>
-                <input
-                  type="password"
-                  placeholder="password"
-                  className="input input-bordered input-sm"
-                  required 
-                />
-                <label className="label">
-                  <a href="#" className="label-text-alt link link-hover">
-                    Forgot password?
-                  </a>
-                </label>
-              </div>
-              <div className="card-actions justify-center">
-                <button className="btn btn-primary btn-sm">Login</button>
-                <button className="btn btn-ghost btn-sm" onClick={handleSignUpClick}>Sign Up</button>
-              </div>
-            </form>
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        supabase.auth
+          .getUser()
+          .then(({ data: { user } }) => setLoggedInUser(user.email));
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!session) {
+    return (
+      <>
+        <div className="hero min-h-screen fixed">
+          <div className="hero-content" style={{ marginTop: "-10rem" }}>
+            <div className="card bg-base-100 sm:w-26 sm:w-[25] shadow-2xl p-10">
+            <div className="text-center text-2xl">Travelify</div>
+              <Auth
+                supabaseClient={supabase}
+                appearance={{
+                  extend: false,
+                  className: {
+                    input: "input input-bordered input-sm w-full sm:w-[400px] md:w-[500px] lg:w-[600px]", // Responsive width classes
+                    label: "label text-md",
+                    button: "btn btn-ghost btn-sm btn-primary mt-10",
+                    container: "flex flex-col space-y-2 items-center justify-center text-md",
+                    divider: "divider",
+                  },
+                }}
+                providers={['google']}
+              />
+              
+            </div>
           </div>
         </div>
-      </div>
-    </>
-  );
+      </>
+    );
+  } else {
+    return <div className="text-white">Logged in: {loggedInUser}!</div>;
+  }
 }
 
 export default Login;
