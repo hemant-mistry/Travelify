@@ -64,7 +64,7 @@ function Navbar({ loggedInUser }) { // Destructure loggedInUser
                   </a>
                 </li>
                 <li>
-                  <a>Settings</a>
+                  <Link to="/mytrips">My Itineraries</Link>
                 </li>
                 <li>
                   <a onClick={handleLogout}>Logout</a>
