@@ -12,7 +12,7 @@ function Plan({ loggedInUser }) {
     // Function to fetch plan details based on tripId
     const fetchPlanDetails = async () => {
       try {
-        const response = await axios.post('http://127.0.0.1:8000/fetch-plan/', { trip_id: tripId });
+        const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}fetch-plan/`, { trip_id: tripId });
         const generatedPlanString = response.data.generated_plan;
         console.log('Generated Plan String:', generatedPlanString); // Log the generated plan string
         

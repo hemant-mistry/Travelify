@@ -10,7 +10,7 @@ function Trip({ loggedInUser }) {
     async function fetchTripDetails() {
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8000/fetch-trip-details/",
+         `${import.meta.env.VITE_BACKEND_URL}fetch-trip-details/`,
           {
             user_id: loggedInUser.id,
           }
