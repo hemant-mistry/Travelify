@@ -6,7 +6,7 @@ import axios from "axios";
 
 function Plan({ loggedInUser }) {
   const { tripId } = useParams();
-  const [planDetails, setPlanDetails] = useState(null); // State to hold fetched plan details
+  const [planDetails, setPlanDetails] = useState([]); // State to hold fetched plan details
 
   useEffect(() => {
     // Function to fetch plan details based on tripId
@@ -16,12 +16,12 @@ function Plan({ loggedInUser }) {
         const generatedPlanString = response.data.generated_plan;
         console.log('Generated Plan String:', generatedPlanString); // Log the generated plan string
         
-        // Clean up unwanted characters (like newline characters) from the string
-        const cleanedPlanString = generatedPlanString.replace(/\n/g, '');
-  
-        // Parse the cleaned plan details string into an array of objects
-        const parsedPlanDetails = JSON.parse(cleanedPlanString);
-        console.log("Parsed", parsedPlanDetails)
+        // Wrap the concatenated JSON objects in an array format
+        const wrappedPlanString = `[${generatedPlanString}]`;
+        
+        // Parse the wrapped plan details string into an array of objects
+        const parsedPlanDetails = JSON.parse(wrappedPlanString);
+        console.log("Parsed", parsedPlanDetails);
         setPlanDetails(parsedPlanDetails);
       } catch (error) {
         console.error('Error fetching plan details:', error);

@@ -31,7 +31,12 @@ function Trip({ loggedInUser }) {
   };
 
   if (loading) {
-    return <div>Loading trip details...</div>;
+    return (
+      <div className="flex justify-center items-center mt-[300px] text-primary">
+        <span className="loading loading-spinner loading-lg mr-5"></span>
+        Loading trips..
+      </div>
+    );
   }
 
   return (
@@ -45,8 +50,14 @@ function Trip({ loggedInUser }) {
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body text-sm">
                 <h2 className="card-title text-md">{trip.stay_details}</h2>
-                <p><b>Preferences: </b>{trip.additional_preferences}</p>
-                <p><b>Number of days: </b>{trip.number_of_days}</p>
+                <p>
+                  <b>Preferences: </b>
+                  {trip.additional_preferences}
+                </p>
+                <p>
+                  <b>Number of days: </b>
+                  {trip.number_of_days}
+                </p>
                 <div className="card-actions justify-end">
                   <button
                     className="btn btn-primary btn-sm mt-5"
