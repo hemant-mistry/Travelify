@@ -14,7 +14,8 @@ jobs:
   # You should configure this environment as close as possible to the production environment, e.g. using Ubuntu for Linux apps, using the same Node version
   build:
     runs-on: ubuntu-latest
-
+    env:
+      VITE_BACKEND_URL: "https://frugaloo-backend.azurewebsites.net/"
     steps:
       - uses: actions/checkout@v3
 
@@ -46,6 +47,9 @@ jobs:
       name: 'Production'
       url: 'https://frugaloo.azurewebsites.net/'
 
+    env:
+      VITE_BACKEND_URL: "https://frugaloo-backend.azurewebsites.net/"
+      
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v3
