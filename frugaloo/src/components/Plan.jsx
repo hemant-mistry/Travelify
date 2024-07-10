@@ -60,14 +60,14 @@ function Plan({ loggedInUser }) {
         Your personalized <span className="text-primary">Itinerary.. {tripId}</span>
       </div>
       <div className="timeline-container p-10">
-        <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical bg-green">
+        <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
           {planDetails && planDetails.map((day, index) => (
             <li key={index}>
               <div className="timeline-middle">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 20 20"
-                  fill="lightgreen"
+                  fill="white"
                   className="h-5 w-5"
                 >
                   <path
@@ -79,9 +79,9 @@ function Plan({ loggedInUser }) {
               </div>
               <div className={`mb-10 ${index % 2 === 0 ? 'timeline-start md:text-end justify-start' : 'timeline-end md:text-start justify-end'}`}>
                 <time className="font-bold italic text-primary">Day {day.day}</time>
-                <div className="text-lg font-black">{day.place_name}</div>
+                <div className="text-lg font-black mt-2">{day.place_name}</div>
                 <p>{day.description}</p>
-                <div className={`flex gap-2 mt-2 ${index % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex gap-2 mt-3 mb-5 justify-start ${index % 2 === 0 ? 'md:justify-end' : 'md:justify-start'}`}>
                   {/* The button to open modal */}
                   <label htmlFor={`my_modal_${index}`} className="btn btn-xs md:btn-sm">
                     <img src={geminiIcon} alt="Gemini Icon" className="h-6 w-6" />
@@ -134,7 +134,7 @@ function Plan({ loggedInUser }) {
                   </button>
                 </div>
               </div>
-              <hr className="bg-green-500" />
+              <hr className="" />
             </li>
           ))}
         </ul>
