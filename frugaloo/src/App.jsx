@@ -48,7 +48,12 @@ function App() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center mt-[300px] text-primary">
+        <span className="loading loading-spinner loading-lg mr-5"></span>
+        Loading Travelify...
+      </div>
+    );
   }
 
   if (!session) {
