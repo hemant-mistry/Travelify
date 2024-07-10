@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import Datepicker from "react-tailwindcss-datepicker";
 import geminiIcon from "../assets/GeminiIcon.png";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
 
 function PlanInput({ loggedInUser }) {
+  const navigate = useNavigate();
   const [value, setValue] = useState({
     startDate: new Date(),
     endDate: new Date().setMonth(11),
@@ -85,6 +88,9 @@ function PlanInput({ loggedInUser }) {
         data
       );
       console.log(response.data);
+      // Redirect to /mytrips upon successful submission
+      navigate("/mytrips");
+
     } catch (error) {
       console.error("There was an error saving the trip details!", error);
     } finally {

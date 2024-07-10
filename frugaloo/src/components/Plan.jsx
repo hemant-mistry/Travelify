@@ -7,10 +7,12 @@ import axios from "axios";
 function Plan({ loggedInUser }) {
   const { tripId } = useParams();
   const [planDetails, setPlanDetails] = useState([]); // State to hold fetched plan details
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // Function to fetch plan details based on tripId
     const fetchPlanDetails = async () => {
+      setLoading(true)
       try {
         const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}fetch-plan/`, { trip_id: tripId });
         let generatedPlanString = response.data.generated_plan;
@@ -28,14 +30,30 @@ function Plan({ loggedInUser }) {
         const parsedPlanDetails = JSON.parse(generatedPlanString);
         console.log("Parsed", parsedPlanDetails);
         setPlanDetails(parsedPlanDetails);
+        setLoading(false)
       } catch (error) {
         console.error('Error fetching plan details:', error);
+        setLoading(false)
       }
     };
 
     fetchPlanDetails(); // Fetch plan details when component mounts
   }, [tripId]); // Trigger fetch when tripId changes
 
+  //Handle locate button click
+  const handleLocateClick = (location) => {
+    const url = `https://maps.google.com/?q=${location}`;
+    window.open(url, '_blank');
+  };
+
+  if (loading){
+    return(
+      <div className="flex justify-center items-center mt-[300px] text-primary">
+        <span className="loading loading-spinner loading-lg mr-5"></span>
+        Loading itinerary..
+      </div>
+    )
+  }
   return (
     <>
       <div className="text-center font-bold text-2xl lg:text-3xl">
@@ -103,7 +121,7 @@ function Plan({ loggedInUser }) {
                       Close
                     </label>
                   </div>
-                  <button className="btn btn-xs md:btn-sm">
+                  <button className="btn btn-xs md:btn-sm" onClick={() => handleLocateClick(day.latitude_and_longitude)}> 
                     <img
                       src={googleMapIcon}
                       alt="Google Map Icon"
