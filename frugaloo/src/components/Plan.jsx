@@ -13,29 +13,33 @@ function Plan({ loggedInUser }) {
     const fetchPlanDetails = async () => {
       try {
         const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}fetch-plan/`, { trip_id: tripId });
-        const generatedPlanString = response.data.generated_plan;
+        let generatedPlanString = response.data.generated_plan;
         console.log('Generated Plan String:', generatedPlanString); // Log the generated plan string
-        
-        // Wrap the concatenated JSON objects in an array format
-        const wrappedPlanString = `[${generatedPlanString}]`;
-        
-        // Parse the wrapped plan details string into an array of objects
-        const parsedPlanDetails = JSON.parse(wrappedPlanString);
+
+        // Ensure the plan string is wrapped in array brackets
+        if (generatedPlanString[0] !== '[' && generatedPlanString[generatedPlanString.length - 1] !== ']') {
+          generatedPlanString = `[${generatedPlanString}]`;
+        }
+
+        // Replace occurrences of '},{' with '},{' to ensure valid JSON array format
+        generatedPlanString = generatedPlanString.replace(/}, {/g, "},{");
+
+        // Parse the plan details string into an array of objects
+        const parsedPlanDetails = JSON.parse(generatedPlanString);
         console.log("Parsed", parsedPlanDetails);
         setPlanDetails(parsedPlanDetails);
       } catch (error) {
         console.error('Error fetching plan details:', error);
       }
     };
-  
+
     fetchPlanDetails(); // Fetch plan details when component mounts
   }, [tripId]); // Trigger fetch when tripId changes
-  
+
   return (
     <>
       <div className="text-center font-bold text-2xl lg:text-3xl">
-        Your personalized{" "}
-        <span className="text-primary">Itinerary.. {tripId}</span>
+        Your personalized <span className="text-primary">Itinerary.. {tripId}</span>
       </div>
       <div className="timeline-container p-10">
         <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical bg-green">
@@ -75,7 +79,7 @@ function Plan({ loggedInUser }) {
                       <div>
                         <div className="flex items-center justify-start mb-2">
                           <img
-                            src={googleMapIcon}
+                            src={geminiIcon}
                             alt="Google Map Icon"
                             className="h-6 w-6 mr-2"
                           />
