@@ -72,7 +72,7 @@ function App() {
             path="/planinput"
             element={<PlanInput loggedInUser={loggedInUser} />}
           />
-          <Route path="/plan/:tripId" element={<Plan />} />
+          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser}/>} />
           <Route
             path="/PromptInput"
             element={<PromptInput loggedInUser={loggedInUser} />}

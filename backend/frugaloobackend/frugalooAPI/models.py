@@ -11,3 +11,10 @@ class UserTripInfo(models.Model):
     additional_preferences = models.CharField(max_length=255)
     generated_plan = models.TextField()
 
+
+#User's progress information model
+class UserTripProgressInfo(models.Model):
+    progress_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    user_id = models.CharField(max_length=255)
+    trip_id = models.CharField(max_length=255)
+    progress = models.TextField()

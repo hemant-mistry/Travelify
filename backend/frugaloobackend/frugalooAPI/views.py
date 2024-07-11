@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 import google.generativeai as genai
 import os
-from .models import UserTripInfo
+from .models import UserTripInfo, UserTripProgressInfo
 from .serializers import UserTripInfoSerializer, GeneratedPlanSerializer
 
 class SaveTripDetails(APIView):
@@ -105,5 +105,29 @@ class FetchPlan(APIView):
             serializer = GeneratedPlanSerializer(trip_details)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class UpdateUserTripProgress(APIView):
+    def post(self,request):
+        try:
+            trip_id = request.data.get('trip_id')
+            user_id = request.data.get('user_id')
+            progress = request.data.get('progress')
+
+            UserTripProgressInfo.objects.create(
+            user_id = user_id,
+            trip_id = trip_id,
+            progress = progress
+            )
+
+            response = {
+                "user_id":user_id,
+                "trip_id":trip_id,
+                "progress":progress,
+            }
+
+            return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
