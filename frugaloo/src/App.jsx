@@ -1,146 +1,89 @@
-import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+import Home from "./components/Home";
 import Navbar from "./components/Navbar";
+import Login from "./components/Login";
+import SignUp from "./components/SignUp";
+import PlanInput from "./components/PlanInput";
+import Plan from "./components/Plan";
 import PromptInput from "./components/PromptInput";
-import GeminiIcon from "./assets/GeminiIcon.png";
-import axios from "axios";
-import ReactMarkdown from "react-markdown";
+import Trip from "./components/Trips";
 
-function truncateText(text, maxLength) {
-  if (text.length > maxLength) {
-    return text.substring(0, maxLength) + "...";
-  }
-  return text;
-}
+const supabase = createClient(
+  "https://wqbvxqxuiwhmretkcjaw.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s"
+);
 
 function App() {
-  const [isFirstMessage, setIsFirstMessage] = useState(true);
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false); // Loading state
+  const [session, setSession] = useState(null);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSendMessage = async (userMessage) => {
-    setIsFirstMessage(false); // Update isFirstMessage after first interaction
-    setLoading(true); // Set loading state when sending message
-
-    // Add user message immediately
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { type: "user", text: userMessage },
-      { type: "response", text: "" }, // Placeholder for response message
-    ]);
-
-    try {
-      // Call the API
-      const response = await axios.post(
-        "http://127.0.0.1:8000/generate-message/",
-        {
-          user_name: "Hemant",
-          message: userMessage,
-        }
-      );
-
-      const receivedMessage = response.data.response;
-
-      // Update the response message in messages
-      setMessages((prevMessages) => {
-        const updatedMessages = [...prevMessages];
-        const responseIndex = updatedMessages.findIndex(
-          (msg) => msg.type === "response" && msg.text === ""
-        );
-        if (responseIndex !== -1) {
-          updatedMessages[responseIndex] = {
-            type: "response",
-            text: receivedMessage,
-          };
-        }
-        return updatedMessages;
-      });
-    } catch (error) {
-      console.error("Error sending message:", error);
-    } finally {
-      setLoading(false); // Reset loading state after message sent
+  useEffect(() => {
+    async function fetchSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSession(session);
+      if (session) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        setLoggedInUser(user);
+      }
+      setLoading(false);
     }
-  };
 
-  // Example button texts
-  const button1Text =
-    "Suggest European cities for history, nightlife, and nature.";
-  const button2Text =
-    "Plan a $2000 week-long Japan trip, including flights, stay, food, and activities.";
-  const button3Text =
-    "Create a 10-day Southeast Asia itinerary for Thailand, Vietnam, and Cambodia.";
-  const button4Text =
-    "What should I pack for a two-week trip to New Zealand in November?";
+    fetchSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center mt-[300px] text-primary">
+        <span className="loading loading-spinner loading-lg mr-5"></span>
+        Loading Travelify...
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
 
   return (
-    <>
-      <Navbar />
-      {isFirstMessage ? (
-        <div className="hero mt-10">
-          <div className="hero-content text-center">
-            <div className="lg:max-w-2xl sm:max-w-lg mx-auto">
-              <h1 className="lg:text-5xl sm:text-5xl font-bold">
-                Welcome Back, John
-              </h1>
-              <p className="py-6 lg:text-lg sm:text-lg">
-                Provident cupiditate voluptatem et in. Quaerat fugiat ut
-                assumenda excepturi exercitationem quasi. In deleniti eaque aut
-                repudiandae et a id nisi.
-              </p>
-              <div className="suggested-prompts flex justify-center gap-4 flex-wrap">
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button1Text, 60)}
-                </button>
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button2Text, 60)}
-                </button>
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button3Text, 60)}
-                </button>
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button4Text, 60)}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col h-50 justify-center items-center">
-          <div className="overflow-y-auto w-[60vw] h-[70vh] sm:h-[40vh] sm:w-[30vw] lg:h-[65vh] lg:w-[60vw] p-4 mt-10 no-scrollbar">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex items-start justify-start space-x-4 mb-4 ${
-                  msg.type === "user" ? "user-message" : "copilot-response"
-                }`}
-              >
-                <div className="avatar">
-                  <div className="w-8 rounded-full">
-                    {msg.type === "user" ? (
-                      <img
-                        src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
-                        alt="User"
-                      />
-                    ) : (
-                      <img src={GeminiIcon} alt="Bot" />
-                    )}
-                  </div>
-                </div>
-                <div>
-                  {msg.type === "response" && msg.text === "" ? (
-                    <span className="loading loading-dots loading-md"></span>
-                  ) : (
-                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                  )}
-                </div>
-              </div>
-            ))}
-           
-            
-          </div>
-        </div>
-      )}
-      <PromptInput onSendMessage={handleSendMessage} setLoading={setLoading} />
-    </>
+    <BrowserRouter>
+      <div>
+        <Navbar loggedInUser={loggedInUser} />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route
+            path="/planinput"
+            element={<PlanInput loggedInUser={loggedInUser} />}
+          />
+          <Route path="/plan/:tripId" element={<Plan />} />
+          <Route
+            path="/PromptInput"
+            element={<PromptInput loggedInUser={loggedInUser} />}
+          />
+          <Route
+            path="/mytrips"
+            element={<Trip loggedInUser={loggedInUser} />}
+          />
+        </Routes>
+      </div>
+    </BrowserRouter>
   );
 }
 
