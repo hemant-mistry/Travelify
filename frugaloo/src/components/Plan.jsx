@@ -57,7 +57,7 @@ function Plan({ loggedInUser }) {
   return (
     <>
       <div className="text-center font-bold text-2xl lg:text-3xl">
-        Your personalized <span className="text-primary">Itinerary.. {tripId}</span>
+        Your personalized Itinerary..
       </div>
       <div className="timeline-container p-10">
         <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
@@ -111,6 +111,7 @@ function Plan({ loggedInUser }) {
                             rows={5}
                             placeholder="Describe the changes you want to make in the Itinerary..."
                           ></textarea>
+                          <p  className="mt-2 text-xs text-gray-500 dark:text-gray-400">Remember, contributions to this topic should follow our <a href="#" class="text-primary hover:underline">Community Guidelines</a>.</p>
                           <button className="btn btn-outline btn-primary btn-sm mt-5">
                             Get AI powered suggestions
                           </button>

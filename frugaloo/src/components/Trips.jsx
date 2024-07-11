@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import ViewIcon from "../assets/ViewIcon.png";
+
 function Trip({ loggedInUser }) {
   const [tripDetails, setTripDetails] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,10 +46,11 @@ function Trip({ loggedInUser }) {
       <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
         My Itineraries
       </div>
+      <div className="text-2xl md:text-sm pl-4 mt-2 md:pl-6">Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint et tempore cumque quaerat sequi blanditiis facilis impedit fugiat.</div>
       <div className="flex flex-wrap justify-start">
         {tripDetails.map((trip, index) => (
           <div key={index} className="max-w-xs mx-auto md:mx-5 mt-10">
-            <div className="card bg-base-100 shadow-xl">
+            <div className="card bg-base-100 shadow-xl w-64 h-60">
               <div className="card-body text-sm">
                 <h2 className="card-title text-md">{trip.stay_details}</h2>
                 <p>
@@ -63,7 +66,8 @@ function Trip({ loggedInUser }) {
                     className="btn btn-primary btn-sm mt-5"
                     onClick={() => handleViewClick(trip.trip_id)}
                   >
-                    View
+                     <img src={ViewIcon} alt="Login Icon" className="h-4 w-4" />
+                     View
                   </button>
                 </div>
               </div>

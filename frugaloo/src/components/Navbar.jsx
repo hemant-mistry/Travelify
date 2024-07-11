@@ -3,14 +3,17 @@ import { useState } from "react";
 import helpicon from "../assets/helpicon.png";
 import loginIcon from "../assets/loginIcon.png";
 import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient('https://wqbvxqxuiwhmretkcjaw.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s')
-
+import VideoWalkThrough from "../assets/VideoWalkThroughIcon.png";
+const supabase = createClient(
+  "https://wqbvxqxuiwhmretkcjaw.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s"
+);
 
 // eslint-disable-next-line react/prop-types
-function Navbar({ loggedInUser }) { // Destructure loggedInUser
+function Navbar({ loggedInUser }) {
+  // Destructure loggedInUser
   const [dropdownOpen, setDropdownOpen] = useState(false);
- 
+
   const handleAvatarClick = () => {
     setDropdownOpen(!dropdownOpen);
   };
@@ -24,17 +27,25 @@ function Navbar({ loggedInUser }) { // Destructure loggedInUser
     <>
       <div className="navbar rounded-md">
         <div className="flex-1">
-          <Link to="/" className="btn btn-ghost text-xl">Travelify</Link>
+          <Link to="/" className="btn btn-ghost text-xl">
+            Travelify
+          </Link>
         </div>
         <div className="flex-none">
-          <div className="help">
+          <div className="help tooltip tooltip-bottom" data-tip="Help">
+            <button className="btn btn-ghost">
+              <img src={helpicon} alt="Help Icon" className="h-6 w-6" />
+            </button>
+          </div>
+          <div className="video-walkthrough tooltip tooltip-bottom" data-tip="Video Walkthrough">
             <button
               className="btn btn-ghost mr-2"
               onClick={() => document.getElementById("my_modal_4").showModal()}
             >
-              <img src={helpicon} alt="Help Icon" className="h-6 w-6" />
+              <img src={VideoWalkThrough} alt="Help Icon" className="h-6 w-6" />
             </button>
           </div>
+
           {!loggedInUser && ( // Show login button if not logged in
             <Link to="/login" className="btn btn-ghost btn-md">
               <img src={loginIcon} alt="Login Icon" className="h-6 w-6" />
@@ -42,6 +53,7 @@ function Navbar({ loggedInUser }) { // Destructure loggedInUser
             </Link>
           )}
           {loggedInUser && ( // Show avatar if logged in
+          <div className="video-walkthrough tooltip tooltip-bottom" data-tip="Profile">
             <div className="dropdown dropdown-end">
               <div
                 tabIndex="0"
@@ -49,7 +61,7 @@ function Navbar({ loggedInUser }) { // Destructure loggedInUser
                 className="btn btn-circle avatar"
                 onClick={handleAvatarClick}
               >
-                {loggedInUser.email[0]}  
+                {loggedInUser.email[0]}
               </div>
               <ul
                 tabIndex="0"
@@ -70,6 +82,7 @@ function Navbar({ loggedInUser }) { // Destructure loggedInUser
                   <a onClick={handleLogout}>Logout</a>
                 </li>
               </ul>
+            </div>
             </div>
           )}
         </div>
