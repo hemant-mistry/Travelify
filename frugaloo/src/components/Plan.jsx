@@ -153,6 +153,23 @@ function Plan({ loggedInUser }) {
 
   const handleSuggestionClick = async () => {
     setPlanDetails(newPlan);
+
+    //Updating the trip info in the database
+    try{
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}update-plan/`,
+        {
+          trip_id: tripId,
+          new_plan: newPlan,
+        }
+      );
+
+      console.log(response)
+    }
+    catch(error){
+      console.error("Error fetching the original plan", error);
+    }
+
     document.getElementById("my_modal_5").close();
     setSuggestionsModal(false);
   };
@@ -349,9 +366,12 @@ function Plan({ loggedInUser }) {
                           <h3 className="font-bold text-sm md:text-lg text-left">
                             Confirmation
                           </h3>
-                          <p className="py-4 text-sm md:text-lg text-left">
+                          <p className="py-4 text-sm md:text-lg text-center">
                             Are you sure you want to mark this day as completed?
                           </p>
+                          <div className="flex justify-center">
+
+                          
                           <button
                             className="btn btn-sm btn-success"
                             onClick={() => handleConfirmClick(selectedDay)}
@@ -371,6 +391,7 @@ function Plan({ loggedInUser }) {
                             />
                             Discard
                           </button>
+                          </div>
                         </div>
                       </dialog>
                     </div>

@@ -5,6 +5,7 @@ import google.generativeai as genai
 import os
 from .models import UserTripInfo, UserTripProgressInfo
 from .serializers import UserTripInfoSerializer, GeneratedPlanSerializer, UserTripProgressSerializer
+import json
 
 class SaveTripDetails(APIView):
     
@@ -193,5 +194,33 @@ class GeminiSuggestions(APIView):
             }
 
             return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class UpdateTrip(APIView):
+    def post(self,request):
+        try:
+            trip_id = request.data.get('trip_id')
+            new_plan = request.data.get('new_plan')
+
+            restructured_plan_str = json.dumps(new_plan)
+
+            
+
+            print(restructured_plan_str)
+            # Fetch the trip details using the trip_id
+            trip_details = UserTripInfo.objects.filter(trip_id=trip_id).first()
+            
+            
+            if not trip_details:
+                return Response({"error": "Trip details not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            # Update the generated_plan with the new_plan
+            trip_details.generated_plan = restructured_plan_str
+            trip_details.save()
+
+            return Response({"message": "Trip details updated successfully"}, status=status.HTTP_200_OK)
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
