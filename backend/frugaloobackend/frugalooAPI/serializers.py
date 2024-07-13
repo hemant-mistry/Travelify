@@ -1,7 +1,7 @@
 # serializers.py (or any appropriate file in your Django app)
 
 from rest_framework import serializers
-from .models import UserTripInfo
+from .models import UserTripInfo, UserTripProgressInfo
 
 
 class UserTripInfoSerializer(serializers.ModelSerializer):
@@ -14,3 +14,8 @@ class GeneratedPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTripInfo
         fields = ["generated_plan"]
+
+class UserTripProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTripProgressInfo
+        fields = ["day"]

@@ -15,14 +15,14 @@ function PlanInput({ loggedInUser }) {
   const [numberOfDays, setNumberOfDays] = useState(0);
   const [budget, setBudget] = useState("");
   const [preferences, setPreferences] = useState({
-    landmarks: false,
-    rooftopBars: false,
-    museums: false,
-    restaurants: false,
-    patioBars: false,
-    cocktailBars: false,
-    danceClubs: false,
-    dessertShops: false,
+    Landmarks: false,
+    RooftopBars: false,
+    Museums: false,
+    Restaurants: false,
+    PatioBars: false,
+    CocktailBars: false,
+    DanceClubs: false,
+    DessertShops: false,
   });
   const [loading, setLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
@@ -123,7 +123,7 @@ function PlanInput({ loggedInUser }) {
               <label className="form-control w-full max-w-xs">
                 <div className="label">
                   <span className="label-text text-sm md:text-sm text-white">
-                    Enter your stay details :
+                    Where are you planning to go?
                   </span>
                 </div>
                 <input
@@ -140,7 +140,7 @@ function PlanInput({ loggedInUser }) {
               <label className="form-control w-full max-w-sm md:max-w-lg">
                 <div className="label">
                   <span className="label-text text-sm md:text-sm text-white">
-                    How many days are you planning to stay:
+                    How many days are you planning to visit?
                   </span>
                 </div>
                 <Datepicker
@@ -155,7 +155,7 @@ function PlanInput({ loggedInUser }) {
               <label className="form-control w-full max-w-xs">
                 <div className="label">
                   <span className="label-text text-sm md:text-sm text-white">
-                    Enter your estimated budget :
+                    How much do you think you'll spend?
                   </span>
                 </div>
                 <input

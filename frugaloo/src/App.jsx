@@ -9,6 +9,7 @@ import PlanInput from "./components/PlanInput";
 import Plan from "./components/Plan";
 import PromptInput from "./components/PromptInput";
 import Trip from "./components/Trips";
+import Finance from "./components/Finance";
 
 const supabase = createClient(
   "https://wqbvxqxuiwhmretkcjaw.supabase.co",
@@ -72,7 +73,7 @@ function App() {
             path="/planinput"
             element={<PlanInput loggedInUser={loggedInUser} />}
           />
-          <Route path="/plan/:tripId" element={<Plan />} />
+          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser}/>} />
           <Route
             path="/PromptInput"
             element={<PromptInput loggedInUser={loggedInUser} />}
@@ -80,6 +81,10 @@ function App() {
           <Route
             path="/mytrips"
             element={<Trip loggedInUser={loggedInUser} />}
+          />
+          <Route
+            path="/myfinances"
+            element={<Finance loggedInUser={loggedInUser} />}
           />
         </Routes>
       </div>
