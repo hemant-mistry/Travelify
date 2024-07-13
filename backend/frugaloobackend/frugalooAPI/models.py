@@ -18,3 +18,4 @@ class UserTripProgressInfo(models.Model):
     user_id = models.CharField(max_length=255)
     trip_id = models.CharField(max_length=255)
     progress = models.TextField()
+    day = models.IntegerField(null=True)

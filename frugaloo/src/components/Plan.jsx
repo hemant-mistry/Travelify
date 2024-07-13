@@ -40,14 +40,31 @@ function Plan({ loggedInUser }) {
         const parsedPlanDetails = JSON.parse(generatedPlanString);
         console.log("Parsed", parsedPlanDetails);
         setPlanDetails(parsedPlanDetails);
-        setLoading(false);
+        
       } catch (error) {
         console.error("Error fetching plan details:", error);
         setLoading(false);
       }
     };
 
+    const fetchPlanProgress = async () =>{
+      try {
+        const response = await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}fetch-trip-progress/`,
+          { trip_id: tripId }
+        );
+        const completedDaysArray = response.data.map(day => day.day);
+        setCompletedDays(completedDaysArray);
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching plan details:", error);
+        setLoading(false);
+      }
+    };
+    
+
     fetchPlanDetails(); // Fetch plan details when component mounts
+    fetchPlanProgress();
   }, [tripId]); // Trigger fetch when tripId changes
 
   // Handle locate button click
@@ -64,7 +81,8 @@ function Plan({ loggedInUser }) {
         {
           user_id: loggedInUser.id,
           trip_id: tripId,
-          progress: day.description
+          progress: day.description,
+          day: day.day
         }
       );
       console.log("Progress updated successfully:", response.data);

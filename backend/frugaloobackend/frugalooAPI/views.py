@@ -4,7 +4,7 @@ from rest_framework import status
 import google.generativeai as genai
 import os
 from .models import UserTripInfo, UserTripProgressInfo
-from .serializers import UserTripInfoSerializer, GeneratedPlanSerializer
+from .serializers import UserTripInfoSerializer, GeneratedPlanSerializer, UserTripProgressSerializer
 
 class SaveTripDetails(APIView):
     
@@ -114,20 +114,36 @@ class UpdateUserTripProgress(APIView):
         try:
             trip_id = request.data.get('trip_id')
             user_id = request.data.get('user_id')
+            day = request.data.get('day')
             progress = request.data.get('progress')
 
             UserTripProgressInfo.objects.create(
             user_id = user_id,
             trip_id = trip_id,
-            progress = progress
+            progress = progress,
+            day = day
             )
 
             response = {
                 "user_id":user_id,
                 "trip_id":trip_id,
                 "progress":progress,
+                "day":day
             }
 
             return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class FetchUserTripProgress(APIView):
+    def post(self,request):
+        try:
+            trip_id = request.data.get('trip_id')
+            trip_details = UserTripProgressInfo.objects.filter(trip_id=trip_id)
+            serializer = UserTripProgressSerializer(trip_details, many=True)
+            serialized_data = serializer.data
+            
+            # Return the serialized data as JSON response
+            return Response(serialized_data, status=status.HTTP_200_OK)        
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
