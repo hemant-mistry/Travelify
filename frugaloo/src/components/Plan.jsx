@@ -16,7 +16,9 @@ function Plan({ loggedInUser }) {
   const [userChanges, setUserChanges] = useState(""); // State to hold the user input
   const [planChanges, setPlanChanges] = useState(""); // State to hold the changes from the plan
   const [suggestionsModal, setSuggestionsModal] = useState(false);
+  const [newPlan, setNewPlan] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
+
   useEffect(() => {
     // Function to fetch plan details based on tripId
     const fetchPlanDetails = async () => {
@@ -135,19 +137,24 @@ function Plan({ loggedInUser }) {
       const changes =
         parsedPlanDetails.find((item) => item.changes)?.changes || "";
       setPlanChanges(changes);
-      
 
       // Filter out the changes from the plan details
       const filteredPlanDetails = parsedPlanDetails.filter(
         (item) => !item.changes
       );
-      setPlanDetails(filteredPlanDetails);
-      setSuggestionsModal(true)
+      setNewPlan(filteredPlanDetails);
+      setSuggestionsModal(true);
       setModalLoading(false);
     } catch (error) {
       console.error("Error fetching the original plan", error);
       setModalLoading(false);
     }
+  };
+
+  const handleSuggestionClick = async () => {
+    setPlanDetails(newPlan);
+    document.getElementById("my_modal_5").close();
+    setSuggestionsModal(false);
   };
 
   if (loading) {
@@ -206,9 +213,11 @@ function Plan({ loggedInUser }) {
                       }`}
                     >
                       <>
-                        <label
-                          htmlFor={`my_modal_${index}`}
+                        <button
                           className="btn btn-xs md:btn-sm"
+                          onClick={() =>
+                            document.getElementById(`my_modal_5`).showModal()
+                          }
                         >
                           <img
                             src={geminiIcon}
@@ -216,14 +225,14 @@ function Plan({ loggedInUser }) {
                             className="h-6 w-6"
                           />
                           Ask Gemini
-                        </label>
-                        <input
-                          type="checkbox"
-                          id={`my_modal_${index}`}
-                          className="modal-toggle"
-                        />
-                        <div className="modal" role="dialog">
-                          <div className="modal-box flex items-center justify-center min-h-sm h-80">
+                        </button>
+                        <dialog id="my_modal_5" className="modal">
+                          <div className="modal-box flex items-start justify-center min-h-sm">
+                            <form method="dialog">
+                              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                                ✕
+                              </button>
+                            </form>
                             {modalLoading ? (
                               <div className="flex justify-center items-center text-primary">
                                 <span className="loading loading-spinner loading-lg mr-5"></span>
@@ -231,45 +240,80 @@ function Plan({ loggedInUser }) {
                               </div>
                             ) : (
                               <div>
-                                <div className="flex items-center justify-start mb-2">
-                                  <img
-                                    src={geminiIcon}
-                                    alt="Gemini Icon"
-                                    className="h-6 w-6 mr-2"
-                                  />
-                                  <h3 className="text-sm md:text-lg font-bold">
-                                    Unexpected turns? Want to change Itinerary?
-                                  </h3>
-                                </div>
-                                <div className="text-center">
-                                  <textarea
-                                    className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
-                                    rows={5}
-                                    placeholder="Describe the changes you want to make in the Itinerary..."
-                                    onChange={(e) =>
-                                      setUserChanges(e.target.value)
-                                    }
-                                  ></textarea>
-                                  <button
-                                    className="btn btn-outline btn-primary btn-sm mt-5"
-                                    onClick={() =>
-                                      handleAskGeminiClick(currentDay)
-                                    }
-                                  >
-                                    Get AI powered suggestions
-                                  </button>
-                                </div>
+                                {suggestionsModal ? (
+                                  <>
+                                    <div className="flex items-center justify-start mb-2">
+                                      <img
+                                        src={geminiIcon}
+                                        alt="Gemini Icon"
+                                        className="h-6 w-6 mr-2"
+                                      />
+                                      <h3 className="text-sm md:text-lg font-bold">
+                                        Gemini generated suggestions..
+                                      </h3>
+                                    </div>
+                                    <div className="text-left mt-5">
+                                      {planChanges}
+                                    </div>
+                                    <div className="flex justify-end items-end mt-10">
+                                      <button
+                                        className="btn btn-sm btn-success"
+                                        onClick={() => handleSuggestionClick()}
+                                      >
+                                        <img
+                                          src={TickConfirmation}
+                                          alt="Login Icon"
+                                          className="h-4 w-4"
+                                        />
+                                        Confirm
+                                      </button>
+                                      <button className="btn btn-sm btn-error ml-5">
+                                        <img
+                                          src={DiscardConfirmation}
+                                          alt="Login Icon"
+                                          className="h-4 w-4"
+                                        />
+                                        Discard
+                                      </button>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center justify-start mb-2">
+                                      <img
+                                        src={geminiIcon}
+                                        alt="Gemini Icon"
+                                        className="h-6 w-6 mr-2"
+                                      />
+                                      <h3 className="text-sm md:text-lg font-bold">
+                                        Unexpected turns? Want to change
+                                        Itinerary?
+                                      </h3>
+                                    </div>
+                                    <div className="text-center">
+                                      <textarea
+                                        className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
+                                        rows={5}
+                                        placeholder="Describe the changes you want to make in the Itinerary..."
+                                        onChange={(e) =>
+                                          setUserChanges(e.target.value)
+                                        }
+                                      ></textarea>
+                                      <button
+                                        className="btn btn-outline btn-primary btn-sm mt-5"
+                                        onClick={() =>
+                                          handleAskGeminiClick(currentDay)
+                                        }
+                                      >
+                                        Get AI powered suggestions
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
-
-                          <label
-                            className="modal-backdrop"
-                            htmlFor={`my_modal_${index}`}
-                          >
-                            Close
-                          </label>
-                        </div>
+                        </dialog>
                       </>
 
                       <button
@@ -285,7 +329,7 @@ function Plan({ loggedInUser }) {
                         />
                         Locate
                       </button>
-                      {/* You can open the modal using document.getElementById('ID').showModal() method */}
+
                       <button
                         className="btn btn-success btn-xs md:btn-sm"
                         onClick={() => {
@@ -298,7 +342,6 @@ function Plan({ loggedInUser }) {
                       <dialog id="my_modal_3" className="modal">
                         <div className="modal-box max-w-sm">
                           <form method="dialog">
-                            {/* if there is a button in form, it will close the modal */}
                             <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-4">
                               ✕
                             </button>
