@@ -79,6 +79,9 @@ function Navbar({ loggedInUser }) {
                   <Link to="/mytrips">My Itineraries</Link>
                 </li>
                 <li>
+                  <Link to="/myfinances">My Finances</Link>
+                </li>
+                <li>
                   <a onClick={handleLogout}>Logout</a>
                 </li>
               </ul>
