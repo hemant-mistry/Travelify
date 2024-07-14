@@ -33,7 +33,7 @@ class SaveTripDetails(APIView):
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
             
             generation_config = {
-                "temperature": 1,
+                "temperature": 0.7,
                 "top_p": 0.95,
                 "top_k": 64,
                 "max_output_tokens": 8192,
@@ -45,7 +45,7 @@ class SaveTripDetails(APIView):
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction="Generate an itinerary based on the information received from the user.\n\n### INFORMATION ###\nThe user will provide you with the input in the below format:\n- stay_details\n- number_of_days\n- budget\n- additional_preferences\n\nThe output should be a JSON structure as shown below:\n{\n\"day\": <the day of the trip starting from 1 to number_of_days>,\n\"place_name\":<the name of the place>,\n\"description\":<A short description on what to look for in the place>,\n\"cost\":<The approximate cost that will be spent in the place>,\n\"latitude_and_longitude\":<Provide with the lat, long of the place>\n}",
+                system_instruction="Generate an itinerary based on the information received from the user. Each day in the itinerary should contain minimum 5 activities. \nIn those 5 activities, breakfast, lunch and dinner is included as well. And always recommend the eating places near to the place the user is going to visit.\n### INFORMATION ###\nThe user will provide you with the input in the below format:\n- stay_details\n- number_of_days\n- budget\n- additional_preferences\nThe output should be a JSON structure as shown below:\n\nTOE: It indicates the approx time for exploring that particular activity.\n<OUTPUT FORMAT>\n{  \"1\":[{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"},{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"}],\n  \"2\":[{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"},{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"}],\n  \"3\":[{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"},{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"}, {\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"}],\n  \"4\":[{\"place_name\":\"val1\",\"description\":\"val2\",\"TOE\":\"val3\"}],\n}\n<OUTPUT FORMAT/>\n",
             )
 
             chat_session = model.start_chat(
@@ -116,19 +116,16 @@ class UpdateUserTripProgress(APIView):
             trip_id = request.data.get('trip_id')
             user_id = request.data.get('user_id')
             day = request.data.get('day')
-            progress = request.data.get('progress')
 
             UserTripProgressInfo.objects.create(
             user_id = user_id,
             trip_id = trip_id,
-            progress = progress,
             day = day
             )
 
             response = {
                 "user_id":user_id,
                 "trip_id":trip_id,
-                "progress":progress,
                 "day":day
             }
 

@@ -65,7 +65,7 @@ function Plan({ loggedInUser }) {
           `${import.meta.env.VITE_BACKEND_URL}fetch-trip-progress/`,
           { trip_id: tripId }
         );
-        const completedDaysArray = response.data.map((day) => day.day);
+        const completedDaysArray = response.data.map((day)=>day.day);
         setCompletedDays(completedDaysArray);
         // Set the current day based on completed days
         setCurrentDay(completedDaysArray.length + 1);
@@ -75,7 +75,6 @@ function Plan({ loggedInUser }) {
         setLoading(false);
       }
     };
-
     fetchPlanDetails();
     fetchPlanProgress();
   }, [tripId]);
@@ -87,17 +86,18 @@ function Plan({ loggedInUser }) {
 
   const handleConfirmClick = async (day) => {
     try {
+      console.log("day",day)
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}update-progress/`,
         {
           user_id: loggedInUser.id,
           trip_id: tripId,
-          progress: day.description,
-          day: day.day,
+          day: day,
         }
       );
       // Update the completed days state
-      setCompletedDays([...completedDays, day.day]);
+      setCompletedDays([...completedDays, parseInt(day)]);
+      console.log(completedDays)
       // Move to the next day
       setCurrentDay(currentDay + 1);
       // Close the modal
@@ -155,7 +155,7 @@ function Plan({ loggedInUser }) {
     setPlanDetails(newPlan);
 
     //Updating the trip info in the database
-    try{
+    try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}update-plan/`,
         {
@@ -164,9 +164,8 @@ function Plan({ loggedInUser }) {
         }
       );
 
-      console.log(response)
-    }
-    catch(error){
+      console.log(response);
+    } catch (error) {
       console.error("Error fetching the original plan", error);
     }
 
@@ -186,56 +185,66 @@ function Plan({ loggedInUser }) {
   return (
     <>
       <div className="text-center font-bold text-2xl lg:text-3xl">
-        Your personalized <span className="text-primary">Itinerary..</span>
+        Your personalized <span className="text-primary">Itinerary..{tripId}</span>
       </div>
       <div className="timeline-container p-10">
         <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
           {planDetails &&
-            planDetails.map((day, index) => (
-              <li key={index}>
-                <div className="timeline-middle">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill={
-                      completedDays.includes(day.day) ? "lightgreen" : "white"
-                    }
-                    className="h-5 w-5"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div
-                  className={`mb-10 ${
-                    index % 2 === 0
-                      ? "timeline-start md:text-end justify-start"
-                      : "timeline-end md:text-start justify-end"
-                  }`}
-                >
-                  <time className="font-bold italic text-primary">
-                    Day {day.day}
-                  </time>
-                  <div className="text-lg font-black mt-2">
-                    {day.place_name}
-                  </div>
-                  <p>{day.description}</p>
-                  {currentDay === day.day && (
-                    <div
-                      className={`flex gap-2 mt-3 mb-5 justify-start ${
-                        index % 2 === 0 ? "md:justify-end" : "md:justify-start"
-                      }`}
+            planDetails.map((dayActivities, dayIndex) =>
+              Object.entries(dayActivities).map(([day, activities], index) => (
+                <li key={`${day}-${index}`}>
+                  <div className="timeline-middle">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill={
+                        completedDays.includes(parseInt(day))
+                          ? "lightgreen"
+                          : "white"
+                      }
+                      className="h-5 w-5"
                     >
-                      <>
-                        <button
-                          className="btn btn-xs md:btn-sm"
-                          onClick={() =>
-                            document.getElementById(`my_modal_5`).showModal()
-                          }
-                        >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div
+                    className={`mb-10 ${
+                      dayIndex % 2 === 0
+                        ? "timeline-start md:text-end justify-start"
+                        : "timeline-end md:text-start justify-end"
+                    }`}
+                  >
+                    <time className="font-bold italic text-primary">
+                      Day {day}
+                    </time>
+                    {activities.map((activity, activityIndex) => (
+                      <div key={`${day}-${activityIndex}`} className="mb-5">
+                        <div className="text-lg font-black mt-2">
+                          {activity.place_name}
+                        </div>
+                        <p>{activity.description}</p>
+                        {/* Add any other details you want to display */}
+                      </div>
+                    ))}
+                    {currentDay === parseInt(day) && (
+                      <div
+                        className={`flex gap-2 mt-3 mb-5 justify-start ${
+                          dayIndex % 2 === 0
+                            ? "md:justify-end"
+                            : "md:justify-start"
+                        }`}
+                      >
+                        <>
+                          <button
+                            className="btn btn-xs md:btn-sm"
+                            onClick={() =>
+                              document.getElementById(`my_modal_5`).showModal()
+                            }
+                          >
                           <img
                             src={geminiIcon}
                             alt="Gemini Icon"
@@ -399,11 +408,11 @@ function Plan({ loggedInUser }) {
                 </div>
                 <hr
                   className={
-                    completedDays.includes(day.day) ? "bg-green-500" : ""
+                    completedDays.includes(parseInt(day)) ? "bg-green-500" : ""
                   }
                 />
               </li>
-            ))}
+            )))}
         </ul>
       </div>
     </>
