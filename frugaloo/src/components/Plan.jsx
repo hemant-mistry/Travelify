@@ -213,7 +213,7 @@ function Plan({ loggedInUser }) {
                   </div>
                   <div
                     className={`mb-10 ${
-                      dayIndex % 2 === 0
+                      index % 2 === 0
                         ? "timeline-start md:text-end justify-start"
                         : "timeline-end md:text-start justify-end"
                     }`}
@@ -227,6 +227,7 @@ function Plan({ loggedInUser }) {
                           {activity.place_name}
                         </div>
                         <p>{activity.description}</p>
+                        <p className="text-neutral-content text-xs">Estimated time for exploring : {activity.TOE}</p>
                         {/* Add any other details you want to display */}
                       </div>
                     ))}
