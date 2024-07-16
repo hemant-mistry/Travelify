@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ViewIcon from "../assets/ViewIcon.png";
+import deleteIcon from "../assets/deleteIcon.png"
 
 function Trip({ loggedInUser }) {
   const [tripDetails, setTripDetails] = useState([]);
@@ -46,11 +47,11 @@ function Trip({ loggedInUser }) {
       <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
         My Itineraries
       </div>
-      <div className="text-2xl md:text-sm pl-4 mt-2 md:pl-6">Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint et tempore cumque quaerat sequi blanditiis facilis impedit fugiat.</div>
+      <div className="text-2xl text-sm md:text-sm pl-4 mt-2 md:pl-6 text-sm ">Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint et tempore cumque quaerat sequi blanditiis facilis impedit fugiat.</div>
       <div className="flex flex-wrap justify-start">
         {tripDetails.map((trip, index) => (
           <div key={index} className="max-w-xs mx-auto md:mx-5 mt-10">
-            <div className="card bg-base-100 shadow-xl w-64 h-60">
+            <div className="card bg-base-100 shadow-xl w-75">
               <div className="card-body text-sm">
                 <h2 className="card-title text-md">{trip.stay_details}</h2>
                 <p>
@@ -61,13 +62,20 @@ function Trip({ loggedInUser }) {
                   <b>Number of days: </b>
                   {trip.number_of_days}
                 </p>
-                <div className="card-actions justify-end">
+                <div className="card-actions justify-center gap-5 mt-5">
                   <button
-                    className="btn btn-primary btn-sm mt-5"
+                    className="btn btn-primary btn-sm"
                     onClick={() => handleViewClick(trip.trip_id)}
                   >
                      <img src={ViewIcon} alt="Login Icon" className="h-4 w-4" />
                      View
+                  </button>
+                  <button
+                    className="btn btn-error btn-sm"
+                    onClick={() => handleViewClick(trip.trip_id)}
+                  >
+                     <img src={deleteIcon} alt="Login Icon" className="h-4 w-4" />
+                     Delete
                   </button>
                 </div>
               </div>
