@@ -5,8 +5,27 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import TickConfirmation from "../assets/TickConfirmation.png";
 import DiscardConfirmation from "../assets/DiscardConfirmation.png";
-
+import animationData from "../assets/lotties/gemini.json";
+import geminiData from "../assets/lotties/gemini-logo.json";
+import Lottie from "react-lottie";
 function Plan({ loggedInUser }) {
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: animationData,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
+
+  const geminiAnimationOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: geminiData,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid Slice",
+    },
+  };
   const { tripId } = useParams();
   const [planDetails, setPlanDetails] = useState([]); // State to hold fetched plan details
   const [loading, setLoading] = useState(false);
@@ -65,7 +84,7 @@ function Plan({ loggedInUser }) {
           `${import.meta.env.VITE_BACKEND_URL}fetch-trip-progress/`,
           { trip_id: tripId }
         );
-        const completedDaysArray = response.data.map((day)=>day.day);
+        const completedDaysArray = response.data.map((day) => day.day);
         setCompletedDays(completedDaysArray);
         // Set the current day based on completed days
         setCurrentDay(completedDaysArray.length + 1);
@@ -86,7 +105,7 @@ function Plan({ loggedInUser }) {
 
   const handleConfirmClick = async (day) => {
     try {
-      console.log("day",day)
+      console.log("day", day);
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}update-progress/`,
         {
@@ -97,7 +116,7 @@ function Plan({ loggedInUser }) {
       );
       // Update the completed days state
       setCompletedDays([...completedDays, parseInt(day)]);
-      console.log(completedDays)
+      console.log(completedDays);
       // Move to the next day
       setCurrentDay(currentDay + 1);
       // Close the modal
@@ -185,7 +204,8 @@ function Plan({ loggedInUser }) {
   return (
     <>
       <div className="text-center font-bold text-2xl lg:text-3xl">
-        Your personalized <span className="text-primary">Itinerary..{tripId}</span>
+        Your personalized{" "}
+        <span className="text-primary">Itinerary..{tripId}</span>
       </div>
       <div className="timeline-container p-10">
         <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
@@ -227,7 +247,9 @@ function Plan({ loggedInUser }) {
                           {activity.place_name}
                         </div>
                         <p>{activity.description}</p>
-                        <p className="text-neutral-content text-xs">Estimated time for exploring : {activity.TOE}</p>
+                        <p className="text-neutral-content text-xs">
+                          Estimated time for exploring : {activity.TOE}
+                        </p>
                         {/* Add any other details you want to display */}
                       </div>
                     ))}
@@ -241,179 +263,190 @@ function Plan({ loggedInUser }) {
                       >
                         <>
                           <button
-                            className="btn btn-xs md:btn-sm"
+                            className="btn btn-xs md:btn-sm bg-base-200"
                             onClick={() =>
                               document.getElementById(`my_modal_5`).showModal()
                             }
                           >
+                            <Lottie
+                              options={defaultOptions}
+                              height={20}
+                              width={20}
+                            />
+                            Ask Gemini
+                          </button>
+                          <dialog id="my_modal_5" className="modal">
+                            <div className="modal-box flex items-start justify-center min-h-sm">
+                              <form method="dialog">
+                                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                                  ✕
+                                </button>
+                              </form>
+                              {modalLoading ? (
+                                <div className="flex justify-center items-center text-primary gap-2">
+                                  <Lottie
+                                    options={defaultOptions}
+                                    height={20}
+                                    width={20}
+                                  />
+                                  Loading suggestions..
+                                </div>
+                              ) : (
+                                <div>
+                                  {suggestionsModal ? (
+                                    <>
+                                      <div className="flex items-center justify-start mb-2">
+                                        <img
+                                          src={geminiIcon}
+                                          alt="Gemini Icon"
+                                          className="h-6 w-6 mr-2"
+                                        />
+                                        <h3 className="text-sm md:text-lg font-bold">
+                                          Gemini generated suggestions..
+                                        </h3>
+                                      </div>
+                                      <div className="text-left mt-5">
+                                        {planChanges}
+                                      </div>
+                                      <div className="flex justify-end items-end mt-10">
+                                        <button
+                                          className="btn btn-sm btn-success"
+                                          onClick={() =>
+                                            handleSuggestionClick()
+                                          }
+                                        >
+                                          <img
+                                            src={TickConfirmation}
+                                            alt="Login Icon"
+                                            className="h-4 w-4"
+                                          />
+                                          Confirm
+                                        </button>
+                                        <button className="btn btn-sm btn-error ml-5">
+                                          <img
+                                            src={DiscardConfirmation}
+                                            alt="Login Icon"
+                                            className="h-4 w-4"
+                                          />
+                                          Discard
+                                        </button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="flex items-center justify-start mb-2">
+                                        <Lottie
+                                          options={defaultOptions}
+                                          height={20}
+                                          width={20}
+                                        />
+                                        <h3 className="text-sm md:text-lg font-bold ml-2">
+                                          Unexpected turns? Want to change
+                                          Itinerary?
+                                        </h3>
+                                      </div>
+                                      <div className="text-center">
+                                        <textarea
+                                          className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
+                                          rows={5}
+                                          placeholder="Describe the changes you want to make in the Itinerary..."
+                                          onChange={(e) =>
+                                            setUserChanges(e.target.value)
+                                          }
+                                        ></textarea>
+                                        <button
+                                          className="btn btn-outline btn-primary btn-sm mt-5"
+                                          onClick={() =>
+                                            handleAskGeminiClick(currentDay)
+                                          }
+                                        >
+                                          Get AI powered suggestions
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </dialog>
+                        </>
+
+                        <button
+                          className="btn btn-xs md:btn-sm bg-base-200"
+                          onClick={() =>
+                            handleLocateClick(day.latitude_and_longitude)
+                          }
+                        >
                           <img
-                            src={geminiIcon}
-                            alt="Gemini Icon"
+                            src={googleMapIcon}
+                            alt="Google Map Icon"
                             className="h-6 w-6"
                           />
-                          Ask Gemini
+                          Locate
                         </button>
-                        <dialog id="my_modal_5" className="modal">
-                          <div className="modal-box flex items-start justify-center min-h-sm">
+
+                        <button
+                          className="relative inline-flex items-center justify-center px-10 py-4 overflow-hidden bg-base-200 text-white rounded-lg group btn-xs md:btn-sm"
+                          onClick={() => {
+                            setSelectedDay(day);
+                            document.getElementById("my_modal_3").showModal();
+                          }}
+                        >
+                          <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-success rounded-full group-hover:w-56 group-hover:h-56 text-black"></span>
+                          <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg "></span>
+                          <span className="relative">Mark as completed?</span>
+                        </button>
+
+                        <dialog id="my_modal_3" className="modal">
+                          <div className="modal-box max-w-sm">
                             <form method="dialog">
-                              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-4">
                                 ✕
                               </button>
                             </form>
-                            {modalLoading ? (
-                              <div className="flex justify-center items-center text-primary">
-                                <span className="loading loading-spinner loading-lg mr-5"></span>
-                                Loading suggestions..
-                              </div>
-                            ) : (
-                              <div>
-                                {suggestionsModal ? (
-                                  <>
-                                    <div className="flex items-center justify-start mb-2">
-                                      <img
-                                        src={geminiIcon}
-                                        alt="Gemini Icon"
-                                        className="h-6 w-6 mr-2"
-                                      />
-                                      <h3 className="text-sm md:text-lg font-bold">
-                                        Gemini generated suggestions..
-                                      </h3>
-                                    </div>
-                                    <div className="text-left mt-5">
-                                      {planChanges}
-                                    </div>
-                                    <div className="flex justify-end items-end mt-10">
-                                      <button
-                                        className="btn btn-sm btn-success"
-                                        onClick={() => handleSuggestionClick()}
-                                      >
-                                        <img
-                                          src={TickConfirmation}
-                                          alt="Login Icon"
-                                          className="h-4 w-4"
-                                        />
-                                        Confirm
-                                      </button>
-                                      <button className="btn btn-sm btn-error ml-5">
-                                        <img
-                                          src={DiscardConfirmation}
-                                          alt="Login Icon"
-                                          className="h-4 w-4"
-                                        />
-                                        Discard
-                                      </button>
-                                    </div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div className="flex items-center justify-start mb-2">
-                                      <img
-                                        src={geminiIcon}
-                                        alt="Gemini Icon"
-                                        className="h-6 w-6 mr-2"
-                                      />
-                                      <h3 className="text-sm md:text-lg font-bold">
-                                        Unexpected turns? Want to change
-                                        Itinerary?
-                                      </h3>
-                                    </div>
-                                    <div className="text-center">
-                                      <textarea
-                                        className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
-                                        rows={5}
-                                        placeholder="Describe the changes you want to make in the Itinerary..."
-                                        onChange={(e) =>
-                                          setUserChanges(e.target.value)
-                                        }
-                                      ></textarea>
-                                      <button
-                                        className="btn btn-outline btn-primary btn-sm mt-5"
-                                        onClick={() =>
-                                          handleAskGeminiClick(currentDay)
-                                        }
-                                      >
-                                        Get AI powered suggestions
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            )}
+                            <h3 className="font-bold text-sm md:text-lg text-left">
+                              Confirmation
+                            </h3>
+                            <p className="py-4 text-sm md:text-lg text-center">
+                              Are you sure you want to mark this day as
+                              completed?
+                            </p>
+                            <div className="flex justify-center">
+                              <button
+                                className="btn btn-sm btn-success"
+                                onClick={() => handleConfirmClick(selectedDay)}
+                              >
+                                <img
+                                  src={TickConfirmation}
+                                  alt="Login Icon"
+                                  className="h-4 w-4"
+                                />
+                                Confirm
+                              </button>
+                              <button className="btn btn-sm btn-error ml-5">
+                                <img
+                                  src={DiscardConfirmation}
+                                  alt="Login Icon"
+                                  className="h-4 w-4"
+                                />
+                                Discard
+                              </button>
+                            </div>
                           </div>
                         </dialog>
-                      </>
-
-                      <button
-                        className="btn btn-xs md:btn-sm"
-                        onClick={() =>
-                          handleLocateClick(day.latitude_and_longitude)
-                        }
-                      >
-                        <img
-                          src={googleMapIcon}
-                          alt="Google Map Icon"
-                          className="h-6 w-6"
-                        />
-                        Locate
-                      </button>
-
-                      <button
-                        className="btn btn-success btn-xs md:btn-sm"
-                        onClick={() => {
-                          setSelectedDay(day);
-                          document.getElementById("my_modal_3").showModal();
-                        }}
-                      >
-                        Mark as completed?
-                      </button>
-                      <dialog id="my_modal_3" className="modal">
-                        <div className="modal-box max-w-sm">
-                          <form method="dialog">
-                            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-4">
-                              ✕
-                            </button>
-                          </form>
-                          <h3 className="font-bold text-sm md:text-lg text-left">
-                            Confirmation
-                          </h3>
-                          <p className="py-4 text-sm md:text-lg text-center">
-                            Are you sure you want to mark this day as completed?
-                          </p>
-                          <div className="flex justify-center">
-
-                          
-                          <button
-                            className="btn btn-sm btn-success"
-                            onClick={() => handleConfirmClick(selectedDay)}
-                          >
-                            <img
-                              src={TickConfirmation}
-                              alt="Login Icon"
-                              className="h-4 w-4"
-                            />
-                            Confirm
-                          </button>
-                          <button className="btn btn-sm btn-error ml-5">
-                            <img
-                              src={DiscardConfirmation}
-                              alt="Login Icon"
-                              className="h-4 w-4"
-                            />
-                            Discard
-                          </button>
-                          </div>
-                        </div>
-                      </dialog>
-                    </div>
-                  )}
-                </div>
-                <hr
-                  className={
-                    completedDays.includes(parseInt(day)) ? "bg-green-500" : ""
-                  }
-                />
-              </li>
-            )))}
+                      </div>
+                    )}
+                  </div>
+                  <hr
+                    className={
+                      completedDays.includes(parseInt(day))
+                        ? "bg-green-500"
+                        : ""
+                    }
+                  />
+                </li>
+              ))
+            )}
         </ul>
       </div>
     </>
