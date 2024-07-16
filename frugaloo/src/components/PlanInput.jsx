@@ -3,9 +3,19 @@ import Datepicker from "react-tailwindcss-datepicker";
 import geminiIcon from "../assets/GeminiIcon.png";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import Lottie from "react-lottie";
+import animationData from "../assets/lotties/globe.json";
 
 function PlanInput({ loggedInUser }) {
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: animationData,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
+
   const navigate = useNavigate();
   const [value, setValue] = useState({
     startDate: new Date(),
@@ -32,7 +42,7 @@ function PlanInput({ loggedInUser }) {
     "Gathering the best places to visit...",
     "Finding amazing restaurants and bars...",
     "Creating a memorable experience for you...",
-    "Generated your itinerary",
+    "Almost there...",
   ];
 
   useEffect(() => {
@@ -90,7 +100,6 @@ function PlanInput({ loggedInUser }) {
       console.log(response.data);
       // Redirect to /mytrips upon successful submission
       navigate("/mytrips");
-
     } catch (error) {
       console.error("There was an error saving the trip details!", error);
     } finally {
@@ -105,8 +114,8 @@ function PlanInput({ loggedInUser }) {
   return (
     <>
       {loading ? (
-        <div className="flex justify-center items-center mt-[300px] text-primary">
-          <span className="loading loading-spinner loading-lg mr-5"></span>
+        <div className="text-center items-center md:mt-[180px] sm:mt-[150px] text-primary text-xl">
+          <Lottie options={defaultOptions} height={100} width={100} />
           {loadingMessages[loadingMessageIndex]}
         </div>
       ) : (
@@ -152,19 +161,28 @@ function PlanInput({ loggedInUser }) {
             </div>
             <br />
             <div>
-              <label className="form-control w-full max-w-xs">
+              <label className="form-control w-full max-w-sm">
                 <div className="label">
                   <span className="label-text text-sm md:text-sm text-white">
                     How much do you think you'll spend?
                   </span>
                 </div>
+                <p className="text-neutral-content text-xs pl-1">
+                  Based on the budget preferences we will suggest your
+                  restaurants
+                </p>
                 <input
-                  type="text"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  placeholder="Type here"
-                  className="input input-bordered w-full max-w-xs input-sm md:input-sm"
+                  type="range"
+                  min={0}
+                  max="100"
+                  className="range range-sm mt-5"
+                  step="50"
                 />
+                <div className="flex w-full justify-between px-2 text-xs md:text-sm mt-3">
+                  <span>Frugal</span>
+                  <span>Moderate</span>
+                  <span>Expensive</span>
+                </div>
               </label>
             </div>
             <br />
