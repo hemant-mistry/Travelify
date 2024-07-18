@@ -1,7 +1,7 @@
 # urls.py
 from django.urls import include, path
 from rest_framework import routers
-from .views import SaveTripDetails,FetchTripDetails, FetchPlan,UpdateUserTripProgress,FetchUserTripProgress, GeminiSuggestions, UpdateTrip
+from .views import  SaveTripDetails,FetchTripDetails, FetchPlan,UpdateUserTripProgress,FetchUserTripProgress, GeminiSuggestions, UpdateTrip
 
 router = routers.DefaultRouter()
 
@@ -13,5 +13,5 @@ urlpatterns = [
     path('update-progress/', UpdateUserTripProgress.as_view(), name='update-progress'),
     path('fetch-trip-progress/', FetchUserTripProgress.as_view(), name='fetch-trip-progress'),
     path('gemini-suggestions/', GeminiSuggestions.as_view(), name='gemini-suggestions'),
-    path('update-plan/', UpdateTrip.as_view(), name='update-plan')
+    path('update-plan/', UpdateTrip.as_view(), name='update-plan'),
 ]
