@@ -120,9 +120,6 @@ function Plan({ loggedInUser }) {
         }
       );
 
-      // Log the response data for debugging
-      console.log("Response Data:", response.data);
-
       // Check if response.data is already an object
       const outerData =
         typeof response.data === "string"
@@ -142,15 +139,14 @@ function Plan({ loggedInUser }) {
           ? JSON.parse(innerDataString)
           : innerDataString;
 
-          const changes = parsedPlanDetailsRaw.changes || "";
-          console.log("Changes:", changes);
-          setPlanChanges(changes);
+      const changes = parsedPlanDetailsRaw.changes || "";
+      console.log("Changes:", changes);
+      setPlanChanges(changes);
 
       const new_plan = parsedPlanDetailsRaw.generated_plan || "";
-      console.log("Generated Plan", new_plan)
+      console.log("Generated Plan", new_plan);
       const parsedPlanDetails = Object.values(new_plan);
-      console.log("Parsed plan",parsedPlanDetails)
-
+      console.log("Parsed plan", parsedPlanDetails);
 
       setNewPlan(parsedPlanDetails);
       setSuggestionsModal(true);
@@ -174,8 +170,6 @@ function Plan({ loggedInUser }) {
           new_plan: newPlan,
         }
       );
-
-      console.log(response);
     } catch (error) {
       console.error("Error fetching the original plan", error);
     }
