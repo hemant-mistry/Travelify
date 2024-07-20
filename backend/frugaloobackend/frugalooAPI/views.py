@@ -4,6 +4,8 @@ from rest_framework import status
 import google.generativeai as genai
 import os
 import requests
+import asyncio
+import aiohttp
 from .models import UserTripInfo, UserTripProgressInfo
 from .serializers import (
     UserTripInfoSerializer,
@@ -47,43 +49,55 @@ class SaveTripDetails(APIView):
                 )
         return lat_long_values
 
-    def fetch_nearby_restaurants(self, lat_long_values):
+    async def fetch_nearby_restaurants_async(self, lat_long_values):
         api_key = os.environ.get("GOOGLE_PLACES")
-        radius = 1500
+        radius = "1500"
         results = {}
 
-        for place in lat_long_values:
-            day_index = place["day_index"]
-            place_name = place["place_name"]
-            lat_long = place["lat_long"]
-            lat, lng = lat_long.split(",")
-            url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius={radius}&type=restaurant&key={api_key}"
-            response = requests.get(url)
-            if response.status_code == 200:
-                data = response.json()  # Parse response content as JSON
-                # Sort results by rating descending and take top 5
-                sorted_results = sorted(
-                    data["results"], key=lambda x: x.get("rating", 0), reverse=True
-                )[:5]
-                names_with_details = [
-                    {
-                        "name": result["name"],
-                        "latitude": result["geometry"]["location"]["lat"],
-                        "longitude": result["geometry"]["location"]["lng"],
-                        "rating": result.get("rating", "N/A"),
-                        "price_level": result.get("price_level", "N/A"),
-                    }
-                    for result in sorted_results
-                ]
-                if day_index not in results:
-                    results[day_index] = {}
-                results[day_index][place_name] = names_with_details
-            else:
-                if day_index not in results:
-                    results[day_index] = {}
-                results[day_index][place_name] = {"error": response.status_code}
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for place in lat_long_values:
+                day_index = place["day_index"]
+                place_name = place["place_name"]
+                lat_long = place["lat_long"]
+                lat, lng = lat_long.split(",")
+                url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius={radius}&type=restaurant&key={api_key}"
+                tasks.append(self.fetch_place(session, url, day_index, place_name))
+
+            responses = await asyncio.gather(*tasks)
+            for response in responses:
+                day_index, place_name, data = response
+                if data is not None:
+                    sorted_results = sorted(
+                        data["results"], key=lambda x: x.get("rating", 0), reverse=True
+                    )[:5]
+                    names_with_details = [
+                        {
+                            "name": result["name"],
+                            "latitude": result["geometry"]["location"]["lat"],
+                            "longitude": result["geometry"]["location"]["lng"],
+                            "rating": result.get("rating", "N/A"),
+                            "price_level": result.get("price_level", "N/A"),
+                        }
+                        for result in sorted_results
+                    ]
+                    if day_index not in results:
+                        results[day_index] = {}
+                    results[day_index][place_name] = names_with_details
+                else:
+                    if day_index not in results:
+                        results[day_index] = {}
+                    results[day_index][place_name] = {"error": "Error fetching data"}
 
         return results
+        
+    async def fetch_place(self, session, url, day_index, place_name):
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                return day_index, place_name, data
+            else:
+                return day_index, place_name, None
 
     def post(self, request):
         try:
@@ -119,8 +133,8 @@ class SaveTripDetails(APIView):
             print("Response_data_dict",response_data_dict)
             lat_long_values = self.extract_lat_long(response_data_dict)
 
-            # Fetch nearby restaurants for each lat_long value
-            nearby_restaurants = self.fetch_nearby_restaurants(lat_long_values)
+            nearby_restaurants = asyncio.run(self.fetch_nearby_restaurants_async(lat_long_values))
+
 
             response_raw = {
                 "nearby_restaurants": nearby_restaurants,
