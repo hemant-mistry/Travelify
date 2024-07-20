@@ -157,6 +157,7 @@ class GenerateFinalPlan(APIView):
                 "response_data": response_raw,
             }
             print("response_raw", response_raw)
+            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
             generation_config = {
                 "temperature": 0.7,
                 "top_p": 0.95,
