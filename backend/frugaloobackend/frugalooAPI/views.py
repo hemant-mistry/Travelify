@@ -124,7 +124,7 @@ class SaveTripDetails(APIView):
 
             response_raw = {
                 "nearby_restaurants": nearby_restaurants,
-                "response_data": response_data,
+                "response_data": response_data_dict,
             }
             print("Response Raw", response_raw)
             generation_config = {
