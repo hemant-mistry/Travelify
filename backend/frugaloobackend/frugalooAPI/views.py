@@ -21,7 +21,7 @@ class Preplan(APIView):
             user_id = request.data.get("user_id")
             stay_details = request.data.get("stay_details")
             number_of_days = request.data.get("number_of_days")
-            budget = request.data.get("budget")
+            budget = 1000
             additional_preferences = request.data.get("additional_preferences")
 
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
