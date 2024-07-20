@@ -48,16 +48,15 @@ class Preplan(APIView):
 
             response = chat_session.send_message(concatenated_input)
             response_data = response.text
-            response_data_dict = json.loads(response_data)
             response = {
                 "user_id": user_id,
                 "stay_details": stay_details,
                 "number_of_days": number_of_days,
                 "budget": budget,
                 "additional_preferences": additional_preferences,
-                "response_data": response_data_dict,
+                "response_data": response_data,
             }
-
+            print("################### RESPONSE FROM PHASE 1 ############################", response)
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
@@ -149,12 +148,15 @@ class GenerateFinalPlan(APIView):
             budget = 1000
             additional_preferences = request.data.get("additional_preferences")
             response_raw = request.data.get("response_data")
-            lat_long_values = self.extract_lat_long(response_raw)
+            print("##################### RESPONSE DICT ####################", response_raw)
+            response_raw_dict = json.loads(response_raw)
+            print("##################### RESPONSE DICT ####################", response_raw_dict)
+            lat_long_values = self.extract_lat_long(response_raw_dict)
             nearby_restaurants = self.fetch_nearby_restaurants(lat_long_values)
             
             response_raw = {
                 "nearby_restaurants": nearby_restaurants,
-                "response_data": response_raw,
+                "response_data": response_raw_dict,
             }
             print("response_raw", response_raw)
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
