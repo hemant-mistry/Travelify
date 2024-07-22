@@ -239,7 +239,8 @@ function Plan({ loggedInUser }) {
                   {dayActivities.map((activity, activityIndex) => (
                     <div key={activityIndex} className="mb-5">
                       <div className="text-lg font-black mt-2">
-                        {activity.place_name}
+                      <a className="link link-hover"  href={`https://maps.google.com/?q=${activity.place_name}`} target="_blank">{activity.place_name}</a>
+                      
                       </div>
                       <p>{activity.description}</p>
                       <p className="text-neutral-content text-xs">
