@@ -166,7 +166,7 @@ function Plan({ loggedInUser }) {
   };
 
   const handleSuggestionClick = async () => {
-    setSuggestionLoading(true)
+    setSuggestionLoading(true);
     setPlanDetails(newPlan);
     console.log("newplan", JSON.stringify(newPlan));
     //Updating the trip info in the database
@@ -181,11 +181,10 @@ function Plan({ loggedInUser }) {
     } catch (error) {
       console.error("Error fetching the original plan", error);
     }
-    
+
     document.getElementById("my_modal_5").close();
     setSuggestionLoading(false);
     setSuggestionsModal(false);
-    
   };
 
   if (loading) {
@@ -239,8 +238,13 @@ function Plan({ loggedInUser }) {
                   {dayActivities.map((activity, activityIndex) => (
                     <div key={activityIndex} className="mb-5">
                       <div className="text-lg font-black mt-2">
-                      <a className="link link-hover"  href={`https://maps.google.com/?q=${activity.place_name}`} target="_blank">{activity.place_name}</a>
-                      
+                        <a
+                          className="link link-hover"
+                          href={`https://maps.google.com/?q=${activity.place_name}`}
+                          target="_blank"
+                        >
+                          {activity.place_name}
+                        </a>
                       </div>
                       <p>{activity.description}</p>
                       <p className="text-neutral-content text-xs">
@@ -450,9 +454,11 @@ function Plan({ loggedInUser }) {
                   )}
                 </div>
                 <hr
-                  className={
-                    completedDays.includes(dayIndex + 1) ? "bg-green-500" : ""
-                  }
+                  className={`transition-all duration-1000 ease-in-out ${
+                    completedDays.includes(dayIndex + 1)
+                      ? "bg-green-500 animate-fill"
+                      : ""
+                  }`}
                 />
               </li>
             ))}
