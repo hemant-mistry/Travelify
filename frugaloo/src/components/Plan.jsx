@@ -114,6 +114,7 @@ function Plan({ loggedInUser }) {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}gemini-suggestions/`,
         {
+          trip_id: tripId,
           current_day: day,
           original_plan: planDetails,
           user_changes: userChanges,

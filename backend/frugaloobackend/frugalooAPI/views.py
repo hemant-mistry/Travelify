@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 import google.generativeai as genai
@@ -39,14 +40,14 @@ class Preplan(APIView):
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction='Generate an itinerary based on the information received from the user. Each day in the itinerary should contain minimum 3 mandatory activities. In addition to that you can recommend Exploration/Shopping activity if the user\'s day have bandwidth. You can make that estimate from "Time of Exploration" for all the above three mandatory activities. \n\nTOE: It indicates the approx time for exploring that particular activity.\n\n\n<Mandatory List>\nBelow is the list of mandatory activities: \n###############################################\n1. Morning Activity\n2. Afternoon Activity\n3. Evening Activity\n###############################################\n<Mandatory List/>\n\n\n\n\n### INFORMATION ###\nThe user will provide you with the input in the below format:\n- stay_details\n- number_of_days\n- budget\n- additional_preferences\nThe output should be a JSON structure as shown below:\n\n\n<OUTPUT FORMAT INFORMATION>\n\n9:00 AM - 11:00 AM: Morning Activity\n11:00 AM - 12:30 PM: Exploration/Shopping\n1:30 PM - 4:00 PM: Afternoon Activity\n4:00 PM - 4:30 PM: Break\n4:30 PM - 5:30 PM: Additional Exploration\n7:00 PM - 9:00 PM: Evening Activity\n\nIn the "description" do mention to the user when it is recommeded to visit that location: Morning, Afternoon and Evening. The last activity should always be a night activity.\nMake sure the JSON is correctly structured there should not be any Bad escaped character \n\n\n\n<OUTPUT FORMAT INFORMATION/>\n\n<OUTPUT FORMAT>\n{  "1":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n  "2":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n  "3":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}, {"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n  "4":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n}\n<OUTPUT FORMAT/>\n\n',
-            )
+                system_instruction='Generate an itinerary based on the information received from the user. Each day in the itinerary should contain minimum 3 mandatory activities. In addition to that you can recommend Exploration/Shopping activity if the user\'s day have bandwidth. You can make that estimate from "Time of Exploration" for all the above three mandatory activities. \n\nTOE: It indicates the approx time for exploring that particular activity.\n\n\n<Mandatory List>\nBelow is the list of mandatory activities: \n###############################################\n1. Morning Activity\n2. Afternoon Activity\n3. Evening Activity\n###############################################\n<Mandatory List/>\n\n\n\n\n### INFORMATION ###\nThe user will provide you with the input in the below format:\n- stay_details\n- number_of_days\n- budget\n- additional_preferences\nThe output should be a JSON structure as shown below:\n\n\n<OUTPUT FORMAT INFORMATION>\n\n9:00 AM - 11:00 AM: Morning Activity\n11:00 AM - 12:30 PM: Exploration/Shopping\n1:30 PM - 4:00 PM: Afternoon Activity\n4:00 PM - 4:30 PM: Break\n4:30 PM - 5:30 PM: Additional Exploration\n7:00 PM - 9:00 PM: Evening Activity\n\nIn the "description" do mention to the user when it is recommeded to visit that location: Morning, Afternoon and Evening. The last activity should always be a night activity.\nMake sure the JSON is correctly structured there should not be any Bad escaped character \n\n\n\n<OUTPUT FORMAT INFORMATION/>\n\n<OUTPUT FORMAT>\n{  "1":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n  "2":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n  "3":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}, {"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n  "4":[{"place_name":"val1","description":"val2","TOE":"val3","lat_long":"val4"}],\n}\n<OUTPUT FORMAT/>\n\n',            )
 
             chat_session = model.start_chat(history=[])
 
             concatenated_input = f"Stay Details: {stay_details}\nNumber of Days: {number_of_days}\nBudget: {budget}\nAdditional Preferences: {additional_preferences}"
 
             response = chat_session.send_message(concatenated_input)
+            print("PHASE 1 GEMINI API RESPONSE", response)
             response_data = response.text
             response = {
                 "user_id": user_id,
@@ -56,7 +57,6 @@ class Preplan(APIView):
                 "additional_preferences": additional_preferences,
                 "response_data": response_data,
             }
-            print("################### RESPONSE FROM PHASE 1 ############################", response)
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
@@ -74,6 +74,7 @@ class GenerateFinalPlan(APIView):
         budget,
         additional_preferences,
         generated_plan,
+        nearby_restaurants
     ):
         UserTripInfo.objects.create(
             user_id=user_id,
@@ -82,11 +83,10 @@ class GenerateFinalPlan(APIView):
             budget=budget,
             additional_preferences=additional_preferences,
             generated_plan=generated_plan,
+            nearby_restaurants = nearby_restaurants
         )
 
-        print(
-            f"Inserted trip details into DB {user_id}, {stay_details},{number_of_days},{budget},{additional_preferences}, {generated_plan}"
-        )
+        
 
     def extract_lat_long(self, data):
         lat_long_values = []
@@ -148,9 +148,8 @@ class GenerateFinalPlan(APIView):
             budget = 1000
             additional_preferences = request.data.get("additional_preferences")
             response_raw = request.data.get("response_data")
-            print("##################### RESPONSE DICT ####################", response_raw)
+
             response_raw_dict = json.loads(response_raw)
-            print("##################### RESPONSE DICT ####################", response_raw_dict)
             lat_long_values = self.extract_lat_long(response_raw_dict)
             nearby_restaurants = self.fetch_nearby_restaurants(lat_long_values)
             
@@ -158,7 +157,7 @@ class GenerateFinalPlan(APIView):
                 "nearby_restaurants": nearby_restaurants,
                 "response_data": response_raw_dict,
             }
-            print("response_raw", response_raw)
+
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
             generation_config = {
                 "temperature": 0.7,
@@ -179,6 +178,7 @@ class GenerateFinalPlan(APIView):
 
             chat_session = model.start_chat(history=[])
             response_merged = chat_session.send_message(str(response_raw))
+
             response_data_unmerged = response_merged.text
             self.insert_trip_details(
                 user_id,
@@ -187,7 +187,9 @@ class GenerateFinalPlan(APIView):
                 budget,
                 additional_preferences,
                 response_data_unmerged,
+                nearby_restaurants
             )
+
             return Response(response_data_unmerged, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
@@ -339,10 +341,17 @@ class FetchUserTripProgress(APIView):
 class GeminiSuggestions(APIView):
     def post(self, request):
         try:
-
+            trip_id = request.data.get("trip_id")
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
             user_changes = request.data.get("user_changes")
+            
+            trip_info = get_object_or_404(UserTripInfo, trip_id=trip_id)
+
+            serializer = UserTripInfoSerializer(trip_info)
+            nearby_restaurants = serializer.data.get("nearby_restaurants")
+
+            print("Nearby_Restaurants", nearby_restaurants)
 
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
 
@@ -359,8 +368,355 @@ class GeminiSuggestions(APIView):
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction='You are a travel agent, you plan itinearies for user. You need to give alternate plan for user\'s trip based on their current progress and problems.\n\nYou will be given the below input:\noriginal_plan: It would be a JSON structure which represents the user\'s original plan.\n\ncurrent_day: It represents the current day the user is in. It will give you an idea of the user\'s trip progress.\nuser_changes: It represents the changes the user wants to make in the itinerary or the suggestions they want from you.\nYou need to edit the the original_plan and share it as the output and also let the user know the changes/additions you made.\n\nOnly share the original_plan with the updated data and the summary of the changes with friendly text. Your changes should be added at last of the JSON as shown in the below sample output.\n\n\nSAMPLE_OUTPUT 1:\n{\n"generated_plan":{\n "1": [\n    {\n      "place_name": "Gateway of India",\n      "description": "The Gateway of India is an arch monument built in 1924. It is a popular tourist destination in Mumbai, India. It is located in the Colaba area of South Mumbai. The Gateway was built to commemorate the arrival of King George V and Queen Mary in India. It is a popular spot for taking pictures and enjoying the views of the Arabian Sea.",\n      "TOE": "2 hours",\n      "lat_long": "18.9220, 72.8347"\n    },\n    {\n      "place_name": "Shamiana",\n      "description": "Shamiana is a popular restaurant located near the Gateway of India. It is known for its Indian and Continental cuisine. It is a great place to enjoy a meal with a view of the Arabian Sea.",\n      "TOE": "1 hour",\n      "lat_long": "18.9220554, 72.8330387"\n    },\n    {\n      "place_name": "Elephanta Caves",\n      "description": "The Elephanta Caves are a UNESCO World Heritage Site located on an island in the harbor of Mumbai, India. The caves are known for their intricate rock-cut Hindu sculptures. The caves are dedicated to the Hindu god Shiva, and they date back to the 5th and 6th centuries AD.",\n      "TOE": "3 hours",\n      "lat_long": "18.9814, 72.8762"\n    },\n    {\n      "place_name": "Marine Drive",\n      "description": "Marine Drive is a scenic promenade located in South Mumbai, India. It is also known as the Queen\'s Necklace because of the string of lights that illuminate the road at night. It is a popular spot for taking walks, enjoying the views of the Arabian Sea, and watching the sunset.",\n      "TOE": "1 hour",\n      "lat_long": "18.9418, 72.8271"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Chhatrapati Shivaji Maharaj Terminus",\n      "description": "Chhatrapati Shivaji Maharaj Terminus is a UNESCO World Heritage Site located in Mumbai, India. The terminus is a beautiful example of Victorian Gothic Revival architecture. It is a major railway station in Mumbai, and it is a popular tourist destination.",\n      "TOE": "2 hours",\n      "lat_long": "18.9429, 72.8353"\n    },\n    {\n      "place_name": "The Gourmet Restaurant",\n      "description": "The Gourmet Restaurant is a popular restaurant located near Chhatrapati Shivaji Maharaj Terminus. It is known for its fine dining experience. It is a great place to enjoy a meal with a view of the city.",\n      "TOE": "1.5 hours",\n      "lat_long": "18.9389568, 72.8287517"\n    },\n    {\n      "place_name": "Kanheri Caves",\n      "description": "The Kanheri Caves are a group of Buddhist cave temples located in the Sanjay Gandhi National Park in Mumbai, India. The caves date back to the 1st century BC, and they are known for their intricate carvings and sculptures.",\n      "TOE": "2 hours",\n      "lat_long": "19.1839, 72.9080"\n    },\n    {\n      "place_name": "Juhu Beach",\n      "description": "Juhu Beach is a popular beach in Mumbai, India. It is a great place to relax, enjoy the beach, and watch the sunset.",\n      "TOE": "2 hours",\n      "lat_long": "19.0674, 72.8427"\n    }\n  ],\n  "3": [\n    {\n      "place_name": "Mani Bhavan",\n      "description": "Mani Bhavan is a historic building in Mumbai, India. It was the residence of Mahatma Gandhi during his time in Mumbai. The building is now a museum that showcases Gandhi\'s life and work.",\n      "TOE": "1 hour",\n      "lat_long": "18.9466, 72.8281"\n    },\n    {\n      "place_name": "All Seasons Banquets",\n      "description": "All Seasons Banquets is a popular restaurant located near Mani Bhavan. It is known for its banqueting services. It is a great place to host a special event.",\n      "TOE": "1.5 hours",\n      "lat_long": "18.938381, 72.824679"\n    },\n    {\n      "place_name": "National Gallery of Modern Art",\n      "description": "The National Gallery of Modern Art is a museum located in Mumbai, India. It houses a collection of modern and contemporary art from India and around the world. It is a great place to learn about Indian art and culture.",\n      "TOE": "2 hours",\n      "lat_long": "19.0087, 72.8403"\n    },\n    {\n      "place_name": "Juhu Beach",\n      "description": "Juhu Beach is a popular beach in Mumbai, India. It is a great place to relax, enjoy the beach, and watch the sunset.",\n      "TOE": "2 hours",\n      "lat_long": "19.0674, 72.8427"\n    }\n  ],\n},\n \n  "changes": "Removed Dhobi Ghat from Day 2 and added Juhu Beach in its place."\n}\n\n\nSAMPLE OUTPUT 2:\n{\n"generated_plan":{\n "1": [\n    {"place_name": "Eiffel Tower", "description": "The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France. It is named after the engineer Gustave Eiffel, whose company designed and built the tower. Constructed in 1889 as the entrance arch to the 1889 World\'s Fair, it has become both a global icon of France and one of the most recognizable structures in the world. The tower is 330 meters (1,083 feet) tall and is the tallest structure in Paris. It has three levels for visitors, with restaurants on the first and second levels. The top level offers panoramic views of the city. It is recommended to visit in the morning or evening to avoid the crowds.", "TOE": "2 hours", "lat_long": "48.8584, 2.2945"}, {"place_name": "Hôtel San Régis", "description": "A luxury hotel with a Michelin-starred restaurant, located near the Eiffel Tower.", "TOE": "2 hours", "lat_long": "48.8665, 2.3085"}, {"place_name": "Le Cinq", "description": "A renowned French restaurant with a five-star rating, known for its elegant ambiance and exquisite cuisine.", "TOE": "2 hours", "lat_long": "48.8688, 2.3007"}, {"place_name": "Arc de Triomphe", "description": "The Arc de Triomphe de l\'Étoile is one of the most famous monuments in Paris, France, standing at the western end of the Champs-Élysées at the center of Place Charles de Gaulles. It was commissioned by Napoleon in 1806 to commemorate the Grande Armée\'s victories.  It is recommended to visit in the afternoon.", "TOE": "1 hour", "lat_long": "48.8738, 2.2950"}, {"place_name": "Saint James Paris", "description": "A charming hotel with a Michelin-starred restaurant, offering a luxurious experience in a tranquil setting.", "TOE": "1 hour", "lat_long": "48.8706, 2.2796"}, {"place_name": "Le Taillevent", "description": "A Michelin-starred restaurant known for its refined French cuisine and elegant ambiance.", "TOE": "1 hour", "lat_long": "48.8741, 2.3025"}, {"place_name": "Louvre Museum", "description": "The Louvre Museum is one of the world\'s largest museums and a historic monument in Paris, France. A central landmark of the city, it is located on the Right Bank of the Seine in the city\'s 1st arrondissement and home to some of the most canonical works of Western art, including the Mona Lisa and the Venus de Milo. It is recommended to visit in the afternoon.", "TOE": "3 hours", "lat_long": "48.8606, 2.3376"}, {"place_name": "Hotel Montalembert", "description": "A stylish hotel known for its elegant rooms and proximity to the Louvre Museum.", "TOE": "3 hours", "lat_long": "48.8567, 2.3279"}, {"place_name": "Pavillon Faubourg Saint-Germain & Spa", "description": "A luxurious hotel with a Michelin-starred restaurant and a tranquil spa, offering a pampering experience.", "TOE": "3 hours", "lat_long": "48.8565, 2.3304"}], "2": [{"place_name": "Musée d\'Orsay", "description": "The Musée d\'Orsay is a museum in Paris, France, on the Left Bank of the Seine. It is housed in the former Gare d\'Orsay, a Beaux-Arts railway station built between 1898 and 1900. The museum holds mainly French art dating from 1848 to 1914, including Impressionist, Post-Impressionist, and Art Nouveau works. It is recommended to visit in the morning.", "TOE": "2 hours", "lat_long": "48.8582, 2.3299"}, {"place_name": "Hotel Montalembert", "description": "A stylish hotel known for its elegant rooms and proximity to the Louvre Museum.", "TOE": "2 hours", "lat_long": "48.8567, 2.3279"}, {"place_name": "Pavillon Faubourg Saint-Germain & Spa", "description": "A luxurious hotel with a Michelin-starred restaurant and a tranquil spa, offering a pampering experience.", "TOE": "2 hours", "lat_long": "48.8565, 2.3304"}, {"place_name": "Hotel Crillon, A Rosewood Hotel", "description": "A historic hotel with a Michelin-starred restaurant, offering a luxurious experience in a prime location.", "TOE": "2 hours", "lat_long": "48.8680, 2.3221"}, {"place_name": "Centre Pompidou", "description": "The Centre Pompidou is a complex that includes a museum of modern art, public library, and music and acoustic research center, located in the Beaubourg area of the 4th arrondissement of Paris, France. The building, designed by architect Renzo Piano and Richard Rogers, was completed in 1977, and its distinctive style makes it one of the most recognizable structures in Paris. It is recommended to visit in the afternoon.", "TOE": "2 hours", "lat_long": "48.8608, 2.3488"}, {"place_name": "Pavillon Faubourg Saint-Germain & Spa", "description": "A luxurious hotel with a Michelin-starred restaurant and a tranquil spa, offering a pampering experience.", "TOE": "2 hours", "lat_long": "48.8565, 2.3304"}, {"place_name": "Grand Hôtel du Palais Royal", "description": "A luxurious hotel with a Michelin-starred restaurant, known for its elegant ambiance and prime location.", "TOE": "2 hours", "lat_long": "48.8631, 2.3379"}, {"place_name": "Notre Dame Cathedral", "description": "Notre-Dame de Paris, referred to simply as Notre-Dame, is a medieval Catholic cathedral on the Île de la Cité. The cathedral is widely considered to be one of the finest examples of French Gothic architecture. It is recommended to visit in the evening.", "TOE": "1 hour", "lat_long": "48.8534, 2.3497"}, {"place_name": "Pavillon Faubourg Saint-Germain & Spa", "description": "A luxurious hotel with a Michelin-starred restaurant and a tranquil spa, offering a pampering experience.", "TOE": "1 hour", "lat_long": "48.8565, 2.3304"}, {"place_name": "Shu", "description": "A popular restaurant known for its delicious Asian cuisine and vibrant atmosphere.", "TOE": "1 hour", "lat_long": "48.8530, 2.3422"}], "3": [{"place_name": "Sacré-Cœur Basilica", "description": "The Basilica of the Sacred Heart of Paris, commonly known as Sacré-Cœur Basilica, is a Roman Catholic church and minor basilica, dedicated to the Sacred Heart of Jesus, in the Montmartre district of Paris, France. The basilica is located at the summit of the Butte Montmartre, the highest point in Paris. It is recommended to visit in the morning.", "TOE": "1 hour", "lat_long": "48.8892, 2.3419"}, {"place_name": "Crêperie Brocéliande", "description": "A charming crêperie known for its delicious crêpes and authentic French ambiance.", "TOE": "1 hour", "lat_long": "48.8844, 2.3411"}, {"place_name": "Le Supercoin", "description": "A popular bistro known for its casual atmosphere and delicious French cuisine.", "TOE": "1 hour", "lat_long": "48.8931, 2.3506"}, {"place_name": "Bistrot HOTARU", "description": "A cozy bistro offering a unique blend of French and Japanese cuisine, known for its intimate setting.", "TOE": "1 hour", "lat_long": "48.8782, 2.3427"}, {"place_name": "Montmartre", "description": "Montmartre is a district of Paris, France, located in the 18th arrondissement. The district is known for its hill, the Butte Montmartre, which is the highest point in Paris. Montmartre is also known for its bohemian history and its association with artists, writers, and musicians. It is recommended to visit in the afternoon.", "TOE": "3 hours", "lat_long": "48.8864, 2.3429"}, {"place_name": "Crêperie Brocéliande", "description": "A charming crêperie known for its delicious crêpes and authentic French ambiance.", "TOE": "3 hours", "lat_long": "48.8844, 2.3411"}, {"place_name": "Bistrot HOTARU", "description": "A cozy bistro offering a unique blend of French and Japanese cuisine, known for its intimate setting.", "TOE": "3 hours", "lat_long": "48.8782, 2.3427"}, {"place_name": "Le Supercoin", "description": "A popular bistro known for its casual atmosphere and delicious French cuisine.", "TOE": "3 hours", "lat_long": "48.8931, 2.3506"}, {"place_name": "Moulin Rouge", "description": "The Moulin Rouge is a famous cabaret in Paris, France. It is known for its red windmill and its lavish shows featuring can-can dancers. The Moulin Rouge is located in the Montmartre district of Paris. It is recommended to visit in the evening.", "TOE": "2 hours", "lat_long": "48.8858, 2.3417"}, {"place_name": "Crêperie Brocéliande", "description": "A charming crêperie known for its delicious crêpes and authentic French ambiance.", "TOE": "2 hours", "lat_long": "48.8844, 2.3411"}, {"place_name": "Bistrot HOTARU", "description": "A cozy bistro offering a unique blend of French and Japanese cuisine, known for its intimate setting.", "TOE": "2 hours", "lat_long": "48.8782, 2.3427"}, {"place_name": "L\'Office", "description": "A popular bistro known for its casual atmosphere and delicious French cuisine.", "TOE": "2 hours", "lat_long": "48.8740, 2.3474"}, {"place_name": "Le Supercoin", "description": "A popular bistro known for its casual atmosphere and delicious French cuisine.", "TOE": "2 hours", "lat_long": "48.8931, 2.3506"}], "changes": "I have shortened your trip to 3 days. I have removed Day 4 and Day 5 from your itinerary."}\n',
-            )
+                  system_instruction=f"""You are a travel agent, you plan itineraries for users. You need to give an alternate plan for the user's trip based on their current progress and problems. 
+You will be given the below input:
+original_plan: It would be a JSON structure which represents the user's original plan.
+current_day: It represents the current day the user is in. It will give you an idea of the user's trip progress.
+user_changes: It represents the changes the user wants to make in the itinerary or the suggestions they want from you.
+You need to edit the original_plan and share it as the output and also let the user know the changes/additions you made.
+Only share the original_plan with the updated data and the summary of the changes with friendly text. Your changes should be added at last of the JSON as shown in the below sample output.
+Always generate new suggestions different from the already present locations.
+
+If the user wants to change any restaurants in the original itinerary always pick up restaurants from the nearby_restaurants JSON given below. It contains all the nearby places based on the places. 
+
+If the user wants you to add entire days always pickup restaurants from the below nearby_restaurants data only. Suggest restaurants for breakfast, lunch and dinner you should only add 3 restaurants per day.
+
+{nearby_restaurants}
+
+SAMPLE_OUTPUT 1:
+{{
+  "generated_plan": {{
+    "1": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }}
+    ],
+    "2": [
+      {{
+        "place_name": "Fort St. George",
+        "description": "Explore this historic fort in the morning to learn about its rich history.",
+        "TOE": "2 hours",
+        "lat_long": "13.0824, 80.2728"
+      }},
+      {{
+        "place_name": "The Tandoori Kitchen",
+        "description": "Enjoy traditional Indian flavors at The Tandoori Kitchen, known for its succulent tandoori dishes.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0809, 80.2699"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Parthasarathy Temple",
+        "description": "This temple is dedicated to Lord Krishna and is a popular pilgrimage site. It is best visited in the evening.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0554, 80.2656"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }}
+    ],
+    "3": [
+      {{
+        "place_name": "Anna Salai",
+        "description": "Explore the bustling Anna Salai for shopping and dining. It's best to visit in the afternoon or evening.",
+        "TOE": "3 hours",
+        "lat_long": "13.0680, 80.2562"
+      }},
+      {{
+        "place_name": "Dahlia Restaurant",
+        "description": "Enjoy a fine dining experience at Dahlia Restaurant, known for its elegant ambiance and delicious cuisine.",
+        "TOE": "2 hours",
+        "lat_long": "13.0626, 80.2455"
+      }},
+      {{
+        "place_name": "San Thome Basilica",
+        "description": "This historic church is a popular pilgrimage site. Visit in the morning or afternoon for a peaceful experience.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0645, 80.2689"
+      }},
+      {{
+        "place_name": "VGP Universal Kingdom",
+        "description": "Enjoy a day of fun and entertainment at this amusement park. It's best to visit in the afternoon or evening.",
+        "TOE": "4 hours",
+        "lat_long": "12.9915, 80.2144"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }}
+    ],
+    "4": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Fort St. George",
+        "description": "Explore this historic fort in the morning to learn about its rich history.",
+        "TOE": "2 hours",
+        "lat_long": "13.0824, 80.2728"
+      }}
+    ],
+    "5": [
+      {{
+        "place_name": "MGM Dizzee World",
+        "description": "Enjoy a thrilling day at MGM Dizzee World, a popular amusement park in Chennai.",
+        "TOE": "4 hours",
+        "lat_long": "13.0028, 80.1836"
+      }},
+      {{
+        "place_name": "Qutab Shahi Tombs",
+        "description": "Explore the magnificent Qutab Shahi Tombs, a UNESCO World Heritage Site in Hyderabad.",
+        "TOE": "2 hours",
+        "lat_long": "17.3851, 78.4867"
+      }},
+      {{
+        "place_name": "Birla Mandir",
+        "description": "Visit the serene Birla Mandir, a beautiful Hindu temple dedicated to Lord Venkateswara.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3839, 78.4741"
+      }},
+      {{
+        "place_name": "Charminar",
+        "description": "Admire the iconic Charminar, a historic mosque and a symbol of Hyderabad.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3609, 78.4740"
+      }},
+      {{
+        "place_name": "Salar Jung Museum",
+        "description": "Explore the rich collection of art and artifacts at the Salar Jung Museum.",
+        "TOE": "2 hours",
+        "lat_long": "17.3638, 78.4712"
+      }}
+    ]
+  }},
+    "changes": "I have added two more days to your trip. Day 4 will be a repeat of Day 1 to allow you to explore more of the city. Day 5 will take you to Hyderabad to experience its rich culture and history. I added MGM Dizzee World in Day 4 to give you a fun day. In Day 5 I added Qutab Shahi Tombs, Birla Mandir, Charminar, and Salar Jung Museum. Enjoy your extended trip!"
+}}
+
+{{
+  "generated_plan": {{
+    "1": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }}
+    ],
+    "2": [
+      {{
+        "place_name": "Elliot's Beach",
+        "description": "Elliot's Beach, also known as Besant Nagar Beach, is a popular beach in Chennai known for its calm waters and beautiful sunset views. It's a great place to relax, enjoy the beach, and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0232, 80.2565"
+      }},
+      {{
+        "place_name": "The Tandoori Kitchen",
+        "description": "Enjoy traditional Indian flavors at The Tandoori Kitchen, known for its succulent tandoori dishes.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0809, 80.2699"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Parthasarathy Temple",
+        "description": "This temple is dedicated to Lord Krishna and is a popular pilgrimage site. It is best visited in the evening.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0554, 80.2656"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }}
+    ],
+    "3": [
+      {{
+        "place_name": "Anna Salai",
+        "description": "Explore the bustling Anna Salai for shopping and dining. It's best to visit in the afternoon or evening.",
+        "TOE": "3 hours",
+        "lat_long": "13.0680, 80.2562"
+      }},
+      {{
+        "place_name": "Dahlia Restaurant",
+        "description": "Enjoy a fine dining experience at Dahlia Restaurant, known for its elegant ambiance and delicious cuisine.",
+        "TOE": "2 hours",
+        "lat_long": "13.0626, 80.2455"
+      }},
+      {{
+        "place_name": "San Thome Basilica",
+        "description": "This historic church is a popular pilgrimage site. Visit in the morning or afternoon for a peaceful experience.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0645, 80.2689"
+      }},
+      {{
+        "place_name": "VGP Universal Kingdom",
+        "description": "Enjoy a day of fun and entertainment at this amusement park. It's best to visit in the afternoon or evening.",
+        "TOE": "4 hours",
+        "lat_long": "12.9915, 80.2144"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }}
+    ],
+    "4": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Fort St. George",
+        "description": "Explore this historic fort in the morning to learn about its rich history.",
+        "TOE": "2 hours",
+        "lat_long": "13.0824, 80.2728"
+      }}
+    ],
+    "5": [
+      {{
+        "place_name": "MGM Dizzee World",
+        "description": "Enjoy a thrilling day at MGM Dizzee World, a popular amusement park in Chennai.",
+        "TOE": "4 hours",
+        "lat_long": "13.0028, 80.1836"
+      }},
+      {{
+        "place_name": "Qutab Shahi Tombs",
+        "description": "Explore the magnificent Qutab Shahi Tombs, a UNESCO World Heritage Site in Hyderabad.",
+        "TOE": "2 hours",
+        "lat_long": "17.3851, 78.4867"
+      }},
+      {{
+        "place_name": "Birla Mandir",
+        "description": "Visit the serene Birla Mandir, a beautiful Hindu temple dedicated to Lord Venkateswara.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3839, 78.4741"
+      }},
+      {{
+        "place_name": "Charminar",
+        "description": "Admire the iconic Charminar, a historic mosque and a symbol of Hyderabad.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3609, 78.4740"
+      }},
+      {{
+        "place_name": "Salar Jung Museum",
+        "description": "Explore the rich collection of art and artifacts at the Salar Jung Museum.",
+        "TOE": "2 hours",
+        "lat_long": "17.3638, 78.4712"
+      }}
+    ]
+  }},
+  "changes": "I have replaced Fort St George with Elliot's Beach on Day 2 as it's a nearby beach."
+}}
+
+""" )
 
             chat_session = model.start_chat(history=[])
 
@@ -375,6 +731,7 @@ class GeminiSuggestions(APIView):
                 "response_data": response_data,
             }
 
+            print("Suggestion response", response_data)
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(

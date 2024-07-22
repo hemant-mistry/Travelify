@@ -98,21 +98,21 @@ function PlanInput({ loggedInUser }) {
         data
       );
 
-      const dataReceivedfromPhase1 = response.data.response_data
+      const dataReceivedfromPhase1 = response.data.response_data;
       const data2 = {
         user_id: loggedInUser.id,
-      stay_details: stayDetails,
-      number_of_days: numberOfDays,
-      budget: budget,
-      additional_preferences: additionalPreferences,
-      response_data: dataReceivedfromPhase1
-      }
+        stay_details: stayDetails,
+        number_of_days: numberOfDays,
+        budget: budget,
+        additional_preferences: additionalPreferences,
+        response_data: dataReceivedfromPhase1,
+      };
 
       console.log(response.data.response_data);
       const response2 = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}generate-trip/`,
         data2
-      )
+      );
       console.log(response2.data);
       // Redirect to /mytrips upon successful submission
       navigate("/mytrips");
