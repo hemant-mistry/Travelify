@@ -37,6 +37,7 @@ function Plan({ loggedInUser }) {
   const [suggestionsModal, setSuggestionsModal] = useState(false);
   const [newPlan, setNewPlan] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [suggestionloading, setSuggestionLoading] = useState(false);
 
   useEffect(() => {
     // Function to fetch plan details based on tripId
@@ -158,8 +159,14 @@ function Plan({ loggedInUser }) {
     }
   };
 
+  const handleDiscardClick = () => {
+    setNewPlan("");
+    setSuggestionsModal(false);
+    document.getElementById("my_modal_5").close();
+  };
+
   const handleSuggestionClick = async () => {
-    
+    setSuggestionLoading(true)
     setPlanDetails(newPlan);
     console.log("newplan", JSON.stringify(newPlan));
     //Updating the trip info in the database
@@ -174,9 +181,11 @@ function Plan({ loggedInUser }) {
     } catch (error) {
       console.error("Error fetching the original plan", error);
     }
-
+    
     document.getElementById("my_modal_5").close();
+    setSuggestionLoading(false);
     setSuggestionsModal(false);
+    
   };
 
   if (loading) {
@@ -281,40 +290,56 @@ function Plan({ loggedInUser }) {
                               <div>
                                 {suggestionsModal ? (
                                   <>
-                                    <div className="flex items-center justify-start mb-2">
-                                      <img
-                                        src={geminiIcon}
-                                        alt="Gemini Icon"
-                                        className="h-6 w-6 mr-2"
-                                      />
-                                      <h3 className="text-sm md:text-lg font-bold">
-                                        Gemini generated suggestions..
-                                      </h3>
-                                    </div>
-                                    <div className="text-left mt-5">
-                                      {planChanges}
-                                    </div>
-                                    <div className="flex justify-end items-end mt-10">
-                                      <button
-                                        className="btn btn-sm btn-success"
-                                        onClick={() => handleSuggestionClick()}
-                                      >
-                                        <img
-                                          src={TickConfirmation}
-                                          alt="Login Icon"
-                                          className="h-4 w-4"
-                                        />
-                                        Confirm
-                                      </button>
-                                      <button className="btn btn-sm btn-error ml-5">
-                                        <img
-                                          src={DiscardConfirmation}
-                                          alt="Login Icon"
-                                          className="h-4 w-4"
-                                        />
-                                        Discard
-                                      </button>
-                                    </div>
+                                    {suggestionloading ? (
+                                      <div className="flex flex-row items-center justify-center p-5">
+                                        <span className="loading loading-spinner text-primary loading-md mr-5"></span>
+                                        Applying changes...
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <div className="flex items-center justify-start mb-2">
+                                          <img
+                                            src={geminiIcon}
+                                            alt="Gemini Icon"
+                                            className="h-6 w-6 mr-2"
+                                          />
+                                          <h3 className="text-sm md:text-lg font-bold">
+                                            Gemini generated suggestions..
+                                          </h3>
+                                        </div>
+                                        <div className="text-left mt-5">
+                                          {planChanges}
+                                        </div>
+                                        <div className="flex justify-end items-end mt-10">
+                                          <button
+                                            className="btn btn-sm btn-success"
+                                            onClick={() =>
+                                              handleSuggestionClick()
+                                            }
+                                          >
+                                            <img
+                                              src={TickConfirmation}
+                                              alt="Confirm Icon"
+                                              className="h-4 w-4"
+                                            />
+                                            Confirm
+                                          </button>
+                                          <button
+                                            className="btn btn-sm btn-error ml-5"
+                                            onClick={() =>
+                                              setSuggestionsModal(false)
+                                            }
+                                          >
+                                            <img
+                                              src={DiscardConfirmation}
+                                              alt="Discard Icon"
+                                              className="h-4 w-4"
+                                            />
+                                            Discard
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
                                   </>
                                 ) : (
                                   <>
@@ -406,7 +431,10 @@ function Plan({ loggedInUser }) {
                               />
                               Confirm
                             </button>
-                            <button className="btn btn-sm btn-error ml-5">
+                            <button
+                              className="btn btn-sm btn-error ml-5"
+                              onClick={handleDiscardClick}
+                            >
                               <img
                                 src={DiscardConfirmation}
                                 alt="Login Icon"
