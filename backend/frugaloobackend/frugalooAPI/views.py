@@ -383,6 +383,23 @@ If the user wants you to add entire days always pickup restaurants from the belo
 
 {nearby_restaurants}
 
+### General Structure of JSON output ###
+
+{{
+  "generated_plan":{{
+        "day_number":[
+          {{
+          "place_name": <place_name_1>,
+          "description":<place_description_1>
+          "TOE": "2 hours",
+          "lat_long": "13.0546, 80.2717"
+          }}
+        ],
+  }},
+   "changes": <summary_of_the_change_with_positive_message>
+}}
+
+### EXAMPLES ###
 SAMPLE_OUTPUT 1:
 {{
   "generated_plan": {{
@@ -549,6 +566,8 @@ SAMPLE_OUTPUT 1:
   }},
     "changes": "I have added two more days to your trip. Day 4 will be a repeat of Day 1 to allow you to explore more of the city. Day 5 will take you to Hyderabad to experience its rich culture and history. I added MGM Dizzee World in Day 4 to give you a fun day. In Day 5 I added Qutab Shahi Tombs, Birla Mandir, Charminar, and Salar Jung Museum. Enjoy your extended trip!"
 }}
+
+SAMPLE_OUTPUT 2:
 
 {{
   "generated_plan": {{
