@@ -1,8 +1,12 @@
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 import google.generativeai as genai
 import os
+import requests
+import asyncio
+import aiohttp
 from .models import UserTripInfo, UserTripProgressInfo
 from .serializers import (
     UserTripInfoSerializer,
@@ -12,36 +16,13 @@ from .serializers import (
 import json
 
 
-class SaveTripDetails(APIView):
-
-    def insert_trip_details(
-        self,
-        user_id,
-        stay_details,
-        number_of_days,
-        budget,
-        additional_preferences,
-        generated_plan,
-    ):
-        UserTripInfo.objects.create(
-            user_id=user_id,
-            stay_details=stay_details,
-            number_of_days=number_of_days,
-            budget=budget,
-            additional_preferences=additional_preferences,
-            generated_plan=generated_plan,
-        )
-
-        print(
-            f"Inserted trip details into DB {user_id}, {stay_details},{number_of_days},{budget},{additional_preferences}, {generated_plan}"
-        )
-
+class Preplan(APIView):
     def post(self, request):
         try:
             user_id = request.data.get("user_id")
             stay_details = request.data.get("stay_details")
             number_of_days = request.data.get("number_of_days")
-            budget = request.data.get("budget")
+            budget = 1000
             additional_preferences = request.data.get("additional_preferences")
 
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
@@ -55,11 +36,11 @@ class SaveTripDetails(APIView):
             }
 
             model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
+                model_name="gemini-1.5-pro",
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction='Generate an itinerary based on the information received from the user. Each day in the itinerary should contain minimum 5 activities. \nIn those 5 activities, breakfast, lunch and dinner is included as well. And always recommend the eating places near to the place the user is going to visit.\n### INFORMATION ###\nThe user will provide you with the input in the below format:\n- stay_details\n- number_of_days\n- budget\n- additional_preferences\nThe output should be a JSON structure as shown below:\n\nTOE: It indicates the approx time for exploring that particular activity.\n<OUTPUT FORMAT>\n{  "1":[{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"}],\n  "2":[{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"}],\n  "3":[{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"},{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"}, {"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"}],\n  "4":[{"place_name":"val1","description":"val2","TOE":"val3","latitude_and_longitude":"val4"}],\n}\n<OUTPUT FORMAT/>\n',
+  system_instruction="### TASK DESCRIPTION ###\nGenerate an itinerary based on the provided user information. Each day in the itinerary should contain a minimum of three mandatory activities and all the activities should be near each other with the travelling time less than 2 hours. In addition to the mandatory activities, you may recommend an Exploration/Shopping activity if the user's day has sufficient bandwidth. This estimation can be made based on the \"Time of Exploration\" (TOE) for the mandatory activities.\n\nEnsure that the user visits unique places each day, without repeating any places throughout the itinerary. If the number of days is more than the number of unique places, recommend some additional activities and adventures, but do not repeat places.\n\nThe itinerary should always start the day with a morning activity, followed by an afternoon activity, and end the day with an evening activity.\n\n### USER INPUT FORMAT ###\nThe user will provide the following input:\n\nstay_details\nnumber_of_days\nbudget\nadditional_preferences\n\n### OUTPUT FORMAT ###\nThe output should be a JSON structure formatted as follows:\n\n{\n  \"1\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ],\n  \"3\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ]\n}\n\n\n### GUIDELINES ###\n\nUnique Places: Ensure all places in the itinerary are unique across all days.\nStructured Schedule: Each day starts with a morning activity, followed by an afternoon activity, and ends with an evening activity.\nExploration/Shopping Activity: Include an additional Exploration/Shopping activity if time permits, based on the TOE of mandatory activities.\nJSON Structure: Ensure the JSON output is correctly structured with no repeated places.\n\n### EXAMPLE OUTPUT CONTAINING DUPLICATE ###\n{\n  \"1\": [\n    {\n      \"place_name\": \"Central Park\",\n      \"description\": \"A large public park in New York City. Best time to visit: Morning\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.785091,-73.968285\"\n    },\n    {\n      \"place_name\": \"Metropolitan Museum of Art\",\n      \"description\": \"One of the world's largest and finest art museums. Best time to visit: Afternoon\",\n      \"TOE\": \"2.5 hours\",\n      \"lat_long\": \"40.779437,-73.963244\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Brooklyn Bridge\",\n      \"description\": \"A hybrid cable-stayed/suspension bridge. Best time to visit: Morning\",\n      \"TOE\": \"1.5 hours\",\n      \"lat_long\": \"40.706086,-73.996864\"\n    },\n    {\n      \"place_name\": \"Statue of Liberty\",\n      \"description\": \"A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon\",\n      \"TOE\": \"3 hours\",\n      \"lat_long\": \"40.689247,-74.044502\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n\n  ]\n}\n\nIn the above JSON we can see that the place_name \"Time Square\" is repeated in the day 2 as well even after the user visited that place in day 1.\nSo in such cases you'll need to suggest another place instead of it.\n\n### EXAMPLE CORRECT OUTPUT ###\n{\n  \"1\": [\n    {\n      \"place_name\": \"Central Park\",\n      \"description\": \"A large public park in New York City. Best time to visit: Morning\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.785091,-73.968285\"\n    },\n    {\n      \"place_name\": \"Metropolitan Museum of Art\",\n      \"description\": \"One of the world's largest and finest art museums. Best time to visit: Afternoon\",\n      \"TOE\": \"2.5 hours\",\n      \"lat_long\": \"40.779437,-73.963244\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Brooklyn Bridge\",\n      \"description\": \"A hybrid cable-stayed/suspension bridge. Best time to visit: Morning\",\n      \"TOE\": \"1.5 hours\",\n      \"lat_long\": \"40.706086,-73.996864\"\n    },\n    {\n      \"place_name\": \"Statue of Liberty\",\n      \"description\": \"A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon\",\n      \"TOE\": \"3 hours\",\n      \"lat_long\": \"40.689247,-74.044502\"\n    },\n    {\n      \"place_name\": \"Broadway Show\",\n      \"description\": \"A popular location for theater performances. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.759012,-73.984474\"\n    }\n\n  ]\n}\n\n\n### IMPORTANT ###\n\nEnsure all places in the itinerary are unique.\nStructure each day with a morning, afternoon, and evening activity.\nInclude additional Exploration/Shopping activities if time permits, based on the TOE.",
             )
 
             chat_session = model.start_chat(history=[])
@@ -67,27 +48,143 @@ class SaveTripDetails(APIView):
             concatenated_input = f"Stay Details: {stay_details}\nNumber of Days: {number_of_days}\nBudget: {budget}\nAdditional Preferences: {additional_preferences}"
 
             response = chat_session.send_message(concatenated_input)
+            print("PHASE 1 GEMINI API RESPONSE", response)
             response_data = response.text
-
-            self.insert_trip_details(
-                user_id,
-                stay_details,
-                number_of_days,
-                budget,
-                additional_preferences,
-                response_data,
-            )
-
             response = {
                 "user_id": user_id,
                 "stay_details": stay_details,
                 "number_of_days": number_of_days,
                 "budget": budget,
                 "additional_preferences": additional_preferences,
-                "generated_plan": response_data,
+                "response_data": response_data,
+            }
+            return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class GenerateFinalPlan(APIView):
+
+    def insert_trip_details(
+        self,
+        user_id,
+        stay_details,
+        number_of_days,
+        budget,
+        additional_preferences,
+        generated_plan,
+        nearby_restaurants,
+    ):
+        UserTripInfo.objects.create(
+            user_id=user_id,
+            stay_details=stay_details,
+            number_of_days=number_of_days,
+            budget=budget,
+            additional_preferences=additional_preferences,
+            generated_plan=generated_plan,
+            nearby_restaurants=nearby_restaurants,
+        )
+
+    def extract_lat_long(self, data):
+        lat_long_values = []
+
+        for day_index, day in data.items():
+            for place in day:
+                lat_long_values.append(
+                    {
+                        "day_index": day_index,
+                        "place_name": place["place_name"],
+                        "lat_long": place["lat_long"],
+                    }
+                )
+        return lat_long_values
+
+    def fetch_nearby_restaurants(self, lat_long_values):
+      api_key = os.environ.get("GOOGLE_PLACES")
+      radius = 1500
+      results = {}
+
+      for place in lat_long_values:
+          day_index = place["day_index"]
+          place_name = place["place_name"]
+          lat_long = place["lat_long"]
+          lat, lng = lat_long.split(",")
+          url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={lat},{lng}&radius={radius}&type=restaurant&key={api_key}"
+          response = requests.get(url)
+          if response.status_code == 200:
+              data = response.json()  # Parse response content as JSON
+              names_with_details = [
+                  {
+                      "name": result["name"],
+                      "latitude": result["geometry"]["location"]["lat"],
+                      "longitude": result["geometry"]["location"]["lng"],
+                      "rating": result.get("rating", "N/A"),
+                      "price_level": result.get("price_level", "N/A"),
+                  }
+                  for result in data["results"]
+              ]
+              if day_index not in results:
+                  results[day_index] = {}
+              results[day_index][place_name] = names_with_details
+          else:
+              if day_index not in results:
+                  results[day_index] = {}
+              results[day_index][place_name] = {"error": response.status_code}
+
+      return results
+
+    def post(self, request):
+        try:
+            user_id = request.data.get("user_id")
+            stay_details = request.data.get("stay_details")
+            number_of_days = request.data.get("number_of_days")
+            budget = 1000
+            additional_preferences = request.data.get("additional_preferences")
+            response_raw = request.data.get("response_data")
+
+            response_raw_dict = json.loads(response_raw)
+            lat_long_values = self.extract_lat_long(response_raw_dict)
+            nearby_restaurants = self.fetch_nearby_restaurants(lat_long_values)
+
+            response_raw = {
+                "nearby_restaurants": nearby_restaurants,
+                "response_data": response_raw_dict,
             }
 
-            return Response(response, status=status.HTTP_201_CREATED)
+            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+            generation_config = {
+                "temperature": 1,
+                "top_p": 0.95,
+                "top_k": 64,
+                "max_output_tokens": 8192,
+                "response_mime_type": "application/json",
+            }
+
+            model = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                generation_config=generation_config,
+                # safety_settings = Adjust safety settings
+                # See https://ai.google.dev/gemini-api/docs/safety-settings
+  system_instruction="Role: You are an intelligent travel planner.\n\nObjective: Integrate the best matching restaurants from a provided list of nearby options into an existing itinerary based on user preferences. You will receive two JSON objects: \"nearby_restaurants\" and \"response_data\".\n\n### Input Details: ###\n\n1. nearby_restaurants: A JSON object containing lists of restaurants near each place the user is visiting. Each restaurant has a description, TOE (Time of Exploration), and latitude and longitude information.\n\n2. response_data: A JSON object representing the user's itinerary, where you will integrate the best matching restaurants.\n\n### Task: ###\n\n1. Select Restaurants:\nBy default, recommend the best-rated and cheapest restaurant.\nIntegrate the selected restaurants into the appropriate places in the \"response_data\".\n\n\nOutput: Provide only the updated \"response_data\" JSON. Ensure that the JSON is correctly structured without any bad escaped characters.\n\n### GENERAL STRUCTURE ###\n\n{\n  \"response_data\": {\n    \"1\": [\n      {\n        \"place_name\": <Place_one>,\n        \"description\": \"val1\",\n        \"TOE\": \"val2\",\n        \"lat_long\": \"lat,long\"\n      },\n      {\n        \"restaurant_name\": <Restaurant near to the Place_one>,\n        \"description\": \"<A short description related to the restaurant>\",\n        \"TOE\": \"val2\",\n        \"lat_long\": \"lat,long\"\n      },\n      {\n        \"place_name\": <Place_two>,\n        \"description\": \"val1\",\n        \"TOE\": \"val2\",\n        \"lat_long\": \"lat,long\"\n      },\n{\n        \"place_name\": <Place_three>,\n        \"description\": \"val1\",\n        \"TOE\": \"val2\",\n        \"lat_long\": \"lat,long\"\n      },\n{\n        \"restaurant_name\": <Restaurant near to the Place_three>,\n        \"description\": \"<A short description related to the restaurant\",\n        \"TOE\": \"val2\",\n        \"lat_long\": \"lat,long\"\n      },\n\n    ],\n    \"day_2\": [\n      ...\n    ]\n  }\n}\n\n\n### Guidelines: ###\n\n1. Ensure the selected restaurants are close to the places in the itinerary.\n2. Maintain the correct structure and format of the JSON.\n3. Avoid any bad escaped characters.\n\n### EXAMPLE INPUT ###\n\n{\n\"nearby_restaurants\": {\n\"1\": {\n\"Gateway of India\": [\n{\n\"name\": \"Shamiana\",\n\"latitude\": 18.9220554,\n\"longitude\": 72.8330387,\n\"rating\": 4.7,\n\"price_level\": 3\n},\n{\n\"name\": \"Golden Dragon\",\n\"latitude\": 18.9218167,\n\"longitude\": 72.8334331,\n\"rating\": 4.6,\n\"price_level\": 4\n},\n{\n\"name\": \"Wasabi by Morimoto\",\n\"latitude\": 18.9225215,\n\"longitude\": 72.83322919999999,\n\"rating\": 4.6,\n\"price_level\": 4\n},\n{\n\"name\": \"Souk\",\n\"latitude\": 18.9220554,\n\"longitude\": 72.8330387,\n\"rating\": 4.6,\n\"price_level\": 4\n},\n{\n\"name\": \"Sea Lounge\",\n\"latitude\": 18.921611,\n\"longitude\": 72.83330509999999,\n\"rating\": 4.5,\n\"price_level\": 4\n}\n],\n\"Elephanta Caves\": [],\n\"Dhobi Ghat\": [\n{\n\"name\": \"Saikrupa Hotel\",\n\"latitude\": 18.9618653,\n\"longitude\": 72.8350256,\n\"rating\": 5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"ZAS Kitchen\",\n\"latitude\": 18.95548879999999,\n\"longitude\": 72.83328929999999,\n\"rating\": 4.6,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Bon Appetit\",\n\"latitude\": 18.9545604,\n\"longitude\": 72.8332453,\n\"rating\": 4.5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Arrakis Cafe\",\n\"latitude\": 18.9583136,\n\"longitude\": 72.83748969999999,\n\"rating\": 4.4,\n\"price_level\": 1\n},\n{\n\"name\": \"Cafe Shaheen\",\n\"latitude\": 18.9576754,\n\"longitude\": 72.83133800000002,\n\"rating\": 4.2,\n\"price_level\": \"N/A\"\n}\n]\n},\n\"2\": {\n\"Chhatrapati Shivaji Maharaj Terminus\": [\n{\n\"name\": \"Super Taste\",\n\"latitude\": 18.9533807,\n\"longitude\": 72.8348168,\n\"rating\": 5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Hotel Grant House\",\n\"latitude\": 18.945688,\n\"longitude\": 72.8350631,\n\"rating\": 4.6,\n\"price_level\": 2\n},\n{\n\"name\": \"Bon Appetit\",\n\"latitude\": 18.9545604,\n\"longitude\": 72.8332453,\n\"rating\": 4.5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Royal China\",\n\"latitude\": 18.9384896,\n\"longitude\": 72.8328156,\n\"rating\": 4.4,\n\"price_level\": 3\n},\n{\n\"name\": \"Ustaadi\",\n\"latitude\": 18.9456713,\n\"longitude\": 72.8341837,\n\"rating\": 4.3,\n\"price_level\": 3\n}\n],\n\"Kanheri Caves\": [\n{\n\"name\": \"Famous Chinese\",\n\"latitude\": 19.1353643,\n\"longitude\": 72.8995789,\n\"rating\": 5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Mumbai Vadapav - मुंबई वडापाव\",\n\"latitude\": 19.1358904,\n\"longitude\": 72.90076499999999,\n\"rating\": 4.9,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Anna's Kitchen\",\n\"latitude\": 19.1351649,\n\"longitude\": 72.89989829999999,\n\"rating\": 4.8,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"chandshah wali garib nawaz hotel\",\n\"latitude\": 19.1393675,\n\"longitude\": 72.9046766,\n\"rating\": 4.5,\n\"price_level\": 1\n},\n{\n\"name\": \"Skky - Ramada\",\n\"latitude\": 19.1358383,\n\"longitude\": 72.8985196,\n\"rating\": 4.3,\n\"price_level\": \"N/A\"\n}\n],\n\"Marine Drive\": [\n{\n\"name\": \"All Seasons Banquets\",\n\"latitude\": 18.938381,\n\"longitude\": 72.824679,\n\"rating\": 4.9,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"The Gourmet Restaurant\",\n\"latitude\": 18.9389568,\n\"longitude\": 72.8287517,\n\"rating\": 4.7,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Joss Chinoise Jaan Joss Banquets\",\n\"latitude\": 18.93289,\n\"longitude\": 72.83127999999999,\n\"rating\": 4.7,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Royal China\",\n\"latitude\": 18.9384896,\n\"longitude\": 72.8328156,\n\"rating\": 4.4,\n\"price_level\": 3\n},\n{\n\"name\": \"Castle Hotel\",\n\"latitude\": 18.9447236,\n\"longitude\": 72.8289277,\n\"rating\": 4.3,\n\"price_level\": \"N/A\"\n}\n]\n},\n\"3\": {\n\"Juhu Beach\": [\n{\n\"name\": \"Hakkasan Mumbai\",\n\"latitude\": 19.0608636,\n\"longitude\": 72.834589,\n\"rating\": 4.7,\n\"price_level\": 4\n},\n{\n\"name\": \"Bonobo\",\n\"latitude\": 19.0655221,\n\"longitude\": 72.8340542,\n\"rating\": 4.3,\n\"price_level\": 3\n},\n{\n\"name\": \"Candies\",\n\"latitude\": 19.0610866,\n\"longitude\": 72.8266907,\n\"rating\": 4.3,\n\"price_level\": 2\n},\n{\n\"name\": \"Escobar\",\n\"latitude\": 19.0600351,\n\"longitude\": 72.8363962,\n\"rating\": 4.2,\n\"price_level\": 3\n},\n{\n\"name\": \"Joseph’s Tandoori Kitchen\",\n\"latitude\": 19.0617858,\n\"longitude\": 72.8303955,\n\"rating\": 4.2,\n\"price_level\": 2\n}\n],\n\"Mani Bhavan\": [\n{\n\"name\": \"MAYUR HOSPITALITY\",\n\"latitude\": 18.9552008,\n\"longitude\": 72.8281485,\n\"rating\": 4.8,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Bon Appetit\",\n\"latitude\": 18.9545604,\n\"longitude\": 72.8332453,\n\"rating\": 4.5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Haji Tikka - The Kabab Corner\",\n\"latitude\": 18.9599894,\n\"longitude\": 72.8306206,\n\"rating\": 4.3,\n\"price_level\": 2\n},\n{\n\"name\": \"Kings Shawarma\",\n\"latitude\": 18.9617761,\n\"longitude\": 72.82895789999999,\n\"rating\": 4.3,\n\"price_level\": 2\n},\n{\n\"name\": \"Cafe Shaheen\",\n\"latitude\": 18.9576754,\n\"longitude\": 72.83133800000002,\n\"rating\": 4.2,\n\"price_level\": \"N/A\"\n}\n],\n\"Siddhivinayak Temple\": [\n{\n\"name\": \"Food Corp\",\n\"latitude\": 18.969915,\n\"longitude\": 72.82032509999999,\n\"rating\": 5,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Food Box\",\n\"latitude\": 18.9752524,\n\"longitude\": 72.82382179999999,\n\"rating\": 4.4,\n\"price_level\": \"N/A\"\n},\n{\n\"name\": \"Natural Ice Cream\",\n\"latitude\": 18.9677866,\n\"longitude\": 72.82051009999999,\n\"rating\": 4.4,\n\"price_level\": 2\n},\n{\n\"name\": \"Sarvi Restaurant\",\n\"latitude\": 18.9668207,\n\"longitude\": 72.8291165,\n\"rating\": 4.2,\n\"price_level\": 2\n},\n{\n\"name\": \"Grills & Wok\",\n\"latitude\": 18.9707473,\n\"longitude\": 72.8323569,\n\"rating\": 4.2,\n\"price_level\": 2\n}\n]\n}\n},\n\"response_data\": {\n\"1\": [\n{\n\"place_name\": \"Gateway of India\",\n\"description\": \"The Gateway of India is an arch monument built in 1924. It is a popular tourist destination, especially during the evening.\",\n\"TOE\": \"1.5 hours\",\n\"lat_long\": \"18.9220, 72.8347\"\n},\n{\n\"place_name\": \"Elephanta Caves\",\n\"description\": \"The Elephanta Caves are a UNESCO World Heritage Site located on an island near Mumbai. The caves are dedicated to the Hindu god Shiva and are known for their intricate carvings. It is recommended to visit in the morning or afternoon.\",\n\"TOE\": \"2.5 hours\",\n\"lat_long\": \"18.9843, 72.8777\"\n},\n{\n\"place_name\": \"Dhobi Ghat\",\n\"description\": \"Dhobi Ghat is an open-air laundry in Mumbai. It is a unique and fascinating place to visit. It is recommended to visit in the morning or afternoon.\",\n\"TOE\": \"1 hour\",\n\"lat_long\": \"18.9583, 72.8343\"\n}\n],\n\"2\": [\n{\n\"place_name\": \"Chhatrapati Shivaji Maharaj Terminus\",\n\"description\": \"Chhatrapati Shivaji Maharaj Terminus is a UNESCO World Heritage Site located in Mumbai. It is a beautiful example of Victorian Gothic Revival architecture. It is recommended to visit in the morning or afternoon.\",\n\"TOE\": \"2 hours\",\n\"lat_long\": \"18.9491, 72.8335\"\n},\n{\n\"place_name\": \"Kanheri Caves\",\n\"description\": \"The Kanheri Caves are a group of ancient Buddhist cave temples located in the Sanjay Gandhi National Park. It is recommended to visit in the morning or afternoon.\",\n\"TOE\": \"3 hours\",\n\"lat_long\": \"19.1426, 72.9018\"\n},\n{\n\"place_name\": \"Marine Drive\",\n\"description\": \"Marine Drive is a beautiful promenade located along the coast of Mumbai. It is a popular spot for evening walks and strolls.\",\n\"TOE\": \"1 hour\",\n\"lat_long\": \"18.9392, 72.8247\"\n}\n],\n\"3\": [\n{\n\"place_name\": \"Juhu Beach\",\n\"description\": \"Juhu Beach is a popular beach in Mumbai. It is a great place to relax and enjoy the sunset. It is recommended to visit in the evening.\",\n\"TOE\": \"2 hours\",\n\"lat_long\": \"19.0646, 72.8379\"\n},\n{\n\"place_name\": \"Mani Bhavan\",\n\"description\": \"Mani Bhavan is a historic building in Mumbai that was once the home of Mahatma Gandhi. It is a popular destination for history buffs. It is recommended to visit in the morning or afternoon.\",\n\"TOE\": \"1.5 hours\",\n\"lat_long\": \"18.9582, 72.8291\"\n},\n{\n\"place_name\": \"Siddhivinayak Temple\",\n\"description\": \"Siddhivinayak Temple is a popular Hindu temple dedicated to Lord Ganesha. It is a popular destination for devotees and tourists alike. It is recommended to visit in the morning or afternoon.\",\n\"TOE\": \"1 hour\",\n\"lat_long\": \"18.9727, 72.8252\"\n}\n]\n}\n}\n\n\n\n### EXAMPLE OUTPUT ###\n{\n    \"1\": [\n      {\n        \"place_name\": \"Gateway of India\",\n        \"description\": \"The Gateway of India is an arch monument built in 1924. It is a popular tourist destination, especially during the evening.\",\n        \"TOE\": \"1.5 hours\",\n        \"lat_long\": \"18.9220, 72.8347\"\n      },\n      {\n        \"restaurant_name\": \"Shamiana\",\n        \"description\": \"A fine dining restaurant serving Indian, Asian, and Continental cuisines.\",\n        \"TOE\": \"1.5 hours\",\n        \"lat_long\": \"18.9220554, 72.8330387\"\n      },\n      {\n        \"place_name\": \"Elephanta Caves\",\n        \"description\": \"The Elephanta Caves are a UNESCO World Heritage Site located on an island near Mumbai. The caves are dedicated to the Hindu god Shiva and are known for their intricate carvings. It is recommended to visit in the morning or afternoon.\",\n        \"TOE\": \"2.5 hours\",\n        \"lat_long\": \"18.9843, 72.8777\"\n      },\n      {\n        \"place_name\": \"Dhobi Ghat\",\n        \"description\": \"Dhobi Ghat is an open-air laundry in Mumbai. It is a unique and fascinating place to visit. It is recommended to visit in the morning or afternoon.\",\n        \"TOE\": \"1 hour\",\n        \"lat_long\": \"18.9583, 72.8343\"\n      },\n      {\n        \"restaurant_name\": \"Arrakis Cafe\",\n        \"description\": \"A cafe offering a casual dining experience with a variety of options.\",\n        \"TOE\": \"1 hour\",\n        \"lat_long\": \"18.9583136, 72.83748969999999\"\n      }\n    ],\n    \"2\": [\n      {\n        \"place_name\": \"Chhatrapati Shivaji Maharaj Terminus\",\n        \"description\": \"Chhatrapati Shivaji Maharaj Terminus is a UNESCO World Heritage Site located in Mumbai. It is a beautiful example of Victorian Gothic Revival architecture. It is recommended to visit in the morning or afternoon.\",\n        \"TOE\": \"2 hours\",\n        \"lat_long\": \"18.9491, 72.8335\"\n      },\n      {\n        \"restaurant_name\": \"Super Taste\",\n        \"description\": \"A local restaurant known for its delicious and affordable food.\",\n        \"TOE\": \"2 hours\",\n        \"lat_long\": \"18.9533807, 72.8348168\"\n      },\n      {\n        \"place_name\": \"Kanheri Caves\",\n        \"description\": \"The Kanheri Caves are a group of ancient Buddhist cave temples located in the Sanjay Gandhi National Park. It is recommended to visit in the morning or afternoon.\",\n        \"TOE\": \"3 hours\",\n        \"lat_long\": \"19.1426, 72.9018\"\n      },\n      {\n        \"restaurant_name\": \"Famous Chinese\",\n        \"description\": \"A local restaurant serving authentic Chinese dishes.\",\n        \"TOE\": \"3 hours\",\n        \"lat_long\": \"19.1353643, 72.8995789\"\n      },\n      {\n        \"place_name\": \"Marine Drive\",\n        \"description\": \"Marine Drive is a beautiful promenade located along the coast of Mumbai. It is a popular spot for evening walks and strolls.\",\n        \"TOE\": \"1 hour\",\n        \"lat_long\": \"18.9392, 72.8247\"\n      },\n      {\n        \"restaurant_name\": \"All Seasons Banquets\",\n        \"description\": \"A banquet hall offering a wide selection of cuisines.\",\n        \"TOE\": \"1 hour\",\n        \"lat_long\": \"18.938381, 72.824679\"\n      }\n    ],\n    \"3\": [\n      {\n        \"place_name\": \"Juhu Beach\",\n        \"description\": \"Juhu Beach is a popular beach in Mumbai. It is a great place to relax and enjoy the sunset. It is recommended to visit in the evening.\",\n        \"TOE\": \"2 hours\",\n        \"lat_long\": \"19.0646, 72.8379\"\n      },\n      {\n        \"restaurant_name\": \"Hakkasan Mumbai\",\n        \"description\": \"A fine dining restaurant offering modern Cantonese cuisine.\",\n        \"TOE\": \"2 hours\",\n        \"lat_long\": \"19.0608636, 72.834589\"\n      },\n      {\n        \"place_name\": \"Mani Bhavan\",\n        \"description\": \"Mani Bhavan is a historic building in Mumbai that was once the home of Mahatma Gandhi. It is a popular destination for history buffs. It is recommended to visit in the morning or afternoon.\",\n        \"TOE\": \"1.5 hours\",\n        \"lat_long\": \"18.9582, 72.8291\"\n      },\n      {\n        \"restaurant_name\": \"MAYUR HOSPITALITY\",\n        \"description\": \"A restaurant offering a variety of cuisines and a casual dining experience.\",\n        \"TOE\": \"1.5 hours\",\n        \"lat_long\": \"18.9552008, 72.8281485\"\n      },\n      {\n        \"place_name\": \"Siddhivinayak Temple\",\n        \"description\": \"Siddhivinayak Temple is a popular Hindu temple dedicated to Lord Ganesha. It is a popular destination for devotees and tourists alike. It is recommended to visit in the morning or afternoon.\",\n        \"TOE\": \"1 hour\",\n        \"lat_long\": \"18.9727, 72.8252\"\n      },\n      {\n        \"restaurant_name\": \"Food Corp\",\n        \"description\": \"A restaurant known for its quick and affordable food.\",\n        \"TOE\": \"1 hour\",\n        \"lat_long\": \"18.969915, 72.82032509999999\"\n      }\n    ]\n}\n",
+            )
+
+            chat_session = model.start_chat(history=[])
+            response_merged = chat_session.send_message(str(response_raw))
+
+            response_data_unmerged = response_merged.text
+            self.insert_trip_details(
+                user_id,
+                stay_details,
+                number_of_days,
+                budget,
+                additional_preferences,
+                response_data_unmerged,
+                nearby_restaurants,
+            )
+
+            return Response(response_data_unmerged, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -158,6 +255,67 @@ class UpdateUserTripProgress(APIView):
             )
 
 
+class FetchTripDetails(APIView):
+    def post(self, request):
+        try:
+            user_id = request.data.get("user_id")
+            # Fetch all records where user_id matches
+            trip_details = UserTripInfo.objects.filter(user_id=user_id)
+
+            # Serialize the queryset
+            serializer = UserTripInfoSerializer(trip_details, many=True)
+            serialized_data = serializer.data
+            # Return the serialized data as JSON response
+            return Response(serialized_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class FetchPlan(APIView):
+    def post(self, request):
+        try:
+            trip_id = request.data.get("trip_id")
+            trip_details = UserTripInfo.objects.filter(trip_id=trip_id).first()
+
+            if not trip_details:
+                return Response(
+                    {"error": "Trip details not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            serializer = GeneratedPlanSerializer(trip_details)
+            response_data = json.dumps(serializer.data)
+            return Response(response_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class UpdateUserTripProgress(APIView):
+    def post(self, request):
+        try:
+            trip_id = request.data.get("trip_id")
+            user_id = request.data.get("user_id")
+            day = request.data.get("day")
+
+            UserTripProgressInfo.objects.create(
+                user_id=user_id, trip_id=trip_id, day=day
+            )
+
+            response = {"user_id": user_id, "trip_id": trip_id, "day": day}
+
+            return Response(response, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class FetchUserTripProgress(APIView):
     def post(self, request):
         try:
@@ -177,10 +335,17 @@ class FetchUserTripProgress(APIView):
 class GeminiSuggestions(APIView):
     def post(self, request):
         try:
-
+            trip_id = request.data.get("trip_id")
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
             user_changes = request.data.get("user_changes")
+
+            trip_info = get_object_or_404(UserTripInfo, trip_id=trip_id)
+
+            serializer = UserTripInfoSerializer(trip_info)
+            nearby_restaurants = serializer.data.get("nearby_restaurants")
+
+            print("Nearby_Restaurants", nearby_restaurants)
 
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
 
@@ -197,7 +362,374 @@ class GeminiSuggestions(APIView):
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-  system_instruction="You are a travel agent, you plan itinearies for user. You need to give alternate plan for user\\'s trip based on their current progress and problems.\nYou will be given the below input:\noriginal_plan: It would be a JSON structure which represents the user's original plan.\ncurrent_day: It represents the current day the user is in. It will give you an idea of the user's trip progress.\nuser_changes: It represents the changes the user wants to make in the itinerary or the suggestions they want from you.\nYou need to edit the the original_plan and share it as the output and also let the user know the changes/additions you made. \n\nSAMPLE_OUTPUT:\n[\n    {\n        \"1\": [\n            {\n                \"place_name\": \"The Imperial Hotel\",\n                \"description\": \"Enjoy a delightful breakfast at the iconic Imperial Hotel\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.6271,77.2175\"\n            },\n            {\n                \"place_name\": \"India Gate\",\n                \"description\": \"Immerse yourself in history at the majestic India Gate\",\n                \"TOE\": \"2 hours\",\n                \"latitude_and_longitude\": \"28.6130,77.2295\"\n            },\n            {\n                \"place_name\": \"Theobroma\",\n                \"description\": \"Indulge in a delicious lunch at Theobroma, known for its delectable pastries and sandwiches\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.6128,77.2301\"\n            },\n            {\n                \"place_name\": \"National Museum\",\n                \"description\": \"Explore the rich history and culture of India at the National Museum\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.6210,77.2236\"\n            },\n            {\n                \"place_name\": \"The Piano Man Jazz Club\",\n                \"description\": \"Experience live jazz music and enjoy a relaxing evening at The Piano Man Jazz Club\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.6127,77.2298\"\n            }\n        ],\n        \"2\": [\n            {\n                \"place_name\": \"The Lodhi Hotel\",\n                \"description\": \"Enjoy a delightful breakfast at The Lodhi Hotel\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.5995,77.2251\"\n            },\n            {\n                \"place_name\": \"Humayun's Tomb\",\n                \"description\": \"Explore the Mughal architecture at Humayun's Tomb\",\n                \"TOE\": \"2 hours\",\n                \"latitude_and_longitude\": \"28.5968,77.2290\"\n            },\n            {\n                \"place_name\": \"Karim's\",\n                \"description\": \"Savor a traditional Mughlai lunch at Karim's\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.6331,77.2311\"\n            },\n            {\n                \"place_name\": \"Lotus Temple\",\n                \"description\": \"Admire the unique architecture of the Lotus Temple\",\n                \"TOE\": \"2 hours\",\n                \"latitude_and_longitude\": \"28.5623,77.2495\"\n            },\n            {\n                \"place_name\": \"The Leela Palace\",\n                \"description\": \"Enjoy a rooftop cocktail at The Leela Palace with stunning city views\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.5664,77.2177\"\n            }\n        ],\n        \"3\": [\n            {\n                \"place_name\": \"The Roseate New Delhi\",\n                \"description\": \"Enjoy a delightful breakfast at The Roseate New Delhi\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.5974,77.1878\"\n            },\n            {\n                \"place_name\": \"Qutub Minar\",\n                \"description\": \"Explore the ancient Qutub Minar complex\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.5435,77.1742\"\n            },\n            {\n                \"place_name\": \"Theobroma\",\n                \"description\": \"Indulge in a delicious lunch at Theobroma, known for its delectable pastries and sandwiches\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.5400,77.1752\"\n            },\n            {\n                \"place_name\": \"Dilli Haat\",\n                \"description\": \"Experience the vibrant culture and cuisine of India at Dilli Haat\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.5681,77.2095\"\n            },\n            {\n                \"place_name\": \"The Sky Bar\",\n                \"description\": \"Enjoy a rooftop cocktail at The Sky Bar with stunning city views\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.5968,77.1877\"\n            }\n        ],\n        \"4\": [\n            {\n                \"place_name\": \"The Claridges\",\n                \"description\": \"Enjoy a delightful breakfast at The Claridges\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.6089,77.2235\"\n            },\n            {\n                \"place_name\": \"Red Fort\",\n                \"description\": \"Explore the historical Red Fort, a UNESCO World Heritage Site\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.6561,77.2396\"\n            },\n            {\n                \"place_name\": \"Paranthe Wali Gali\",\n                \"description\": \"Savor delicious parathas at the famous Paranthe Wali Gali\",\n                \"TOE\": \"1.5 hours\",\n                \"latitude_and_longitude\": \"28.6561,77.2396\"\n            },\n            {\n                \"place_name\": \"Chandni Chowk\",\n                \"description\": \"Experience the bustling Chandni Chowk, a historic market\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.6561,77.2396\"\n            },\n            {\n                \"place_name\": \"The Junkyard Cafe\",\n                \"description\": \"Enjoy a lively evening at The Junkyard Cafe, known for its unique ambiance\",\n                \"TOE\": \"3 hours\",\n                \"latitude_and_longitude\": \"28.6195,77.2348\"\n            }\n        ],\n{\n  \"changes\": \"Hello, I've added two more days to your itinerary. Your day 5 will be a repeat of your day 1.  You can always customize this further by letting me know what you want to see on those days.\"\n}\n]",
+                system_instruction=f"""You are a travel agent, you plan itineraries for users. You need to give an alternate plan for the user's trip based on their current progress and problems. 
+You will be given the below input:
+original_plan: It would be a JSON structure which represents the user's original plan.
+current_day: It represents the current day the user is in. It will give you an idea of the user's trip progress.
+user_changes: It represents the changes the user wants to make in the itinerary or the suggestions they want from you.
+You need to edit the original_plan and share it as the output and also let the user know the changes/additions you made.
+Only share the original_plan with the updated data and the summary of the changes with friendly text. Your changes should be added at last of the JSON as shown in the below sample output.
+Always generate new suggestions different from the already present locations.
+
+If the user wants to change any restaurants in the original itinerary always pick up restaurants from the nearby_restaurants JSON given below. It contains all the nearby places based on the places. 
+
+If the user wants you to add entire days always pickup restaurants from the below nearby_restaurants data only. Suggest restaurants for breakfast, lunch and dinner you should only add 3 restaurants per day.
+
+{nearby_restaurants}
+
+### General Structure of JSON output ###
+
+{{
+  "generated_plan":{{
+        "day_number":[
+          {{
+          "place_name": <place_name_1>,
+          "description":<place_description_1>
+          "TOE": "2 hours",
+          "lat_long": "13.0546, 80.2717"
+          }}
+        ],
+  }},
+   "changes": <summary_of_the_change_with_positive_message>
+}}
+
+### EXAMPLES ###
+SAMPLE_OUTPUT 1:
+{{
+  "generated_plan": {{
+    "1": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }}
+    ],
+    "2": [
+      {{
+        "place_name": "Fort St. George",
+        "description": "Explore this historic fort in the morning to learn about its rich history.",
+        "TOE": "2 hours",
+        "lat_long": "13.0824, 80.2728"
+      }},
+      {{
+        "place_name": "The Tandoori Kitchen",
+        "description": "Enjoy traditional Indian flavors at The Tandoori Kitchen, known for its succulent tandoori dishes.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0809, 80.2699"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Parthasarathy Temple",
+        "description": "This temple is dedicated to Lord Krishna and is a popular pilgrimage site. It is best visited in the evening.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0554, 80.2656"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }}
+    ],
+    "3": [
+      {{
+        "place_name": "Anna Salai",
+        "description": "Explore the bustling Anna Salai for shopping and dining. It's best to visit in the afternoon or evening.",
+        "TOE": "3 hours",
+        "lat_long": "13.0680, 80.2562"
+      }},
+      {{
+        "place_name": "Dahlia Restaurant",
+        "description": "Enjoy a fine dining experience at Dahlia Restaurant, known for its elegant ambiance and delicious cuisine.",
+        "TOE": "2 hours",
+        "lat_long": "13.0626, 80.2455"
+      }},
+      {{
+        "place_name": "San Thome Basilica",
+        "description": "This historic church is a popular pilgrimage site. Visit in the morning or afternoon for a peaceful experience.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0645, 80.2689"
+      }},
+      {{
+        "place_name": "VGP Universal Kingdom",
+        "description": "Enjoy a day of fun and entertainment at this amusement park. It's best to visit in the afternoon or evening.",
+        "TOE": "4 hours",
+        "lat_long": "12.9915, 80.2144"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }}
+    ],
+    "4": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Fort St. George",
+        "description": "Explore this historic fort in the morning to learn about its rich history.",
+        "TOE": "2 hours",
+        "lat_long": "13.0824, 80.2728"
+      }}
+    ],
+    "5": [
+      {{
+        "place_name": "MGM Dizzee World",
+        "description": "Enjoy a thrilling day at MGM Dizzee World, a popular amusement park in Chennai.",
+        "TOE": "4 hours",
+        "lat_long": "13.0028, 80.1836"
+      }},
+      {{
+        "place_name": "Qutab Shahi Tombs",
+        "description": "Explore the magnificent Qutab Shahi Tombs, a UNESCO World Heritage Site in Hyderabad.",
+        "TOE": "2 hours",
+        "lat_long": "17.3851, 78.4867"
+      }},
+      {{
+        "place_name": "Birla Mandir",
+        "description": "Visit the serene Birla Mandir, a beautiful Hindu temple dedicated to Lord Venkateswara.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3839, 78.4741"
+      }},
+      {{
+        "place_name": "Charminar",
+        "description": "Admire the iconic Charminar, a historic mosque and a symbol of Hyderabad.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3609, 78.4740"
+      }},
+      {{
+        "place_name": "Salar Jung Museum",
+        "description": "Explore the rich collection of art and artifacts at the Salar Jung Museum.",
+        "TOE": "2 hours",
+        "lat_long": "17.3638, 78.4712"
+      }}
+    ]
+  }},
+    "changes": "I have added two more days to your trip. Day 4 will be a repeat of Day 1 to allow you to explore more of the city. Day 5 will take you to Hyderabad to experience its rich culture and history. I added MGM Dizzee World in Day 4 to give you a fun day. In Day 5 I added Qutab Shahi Tombs, Birla Mandir, Charminar, and Salar Jung Museum. Enjoy your extended trip!"
+}}
+
+SAMPLE_OUTPUT 2:
+
+{{
+  "generated_plan": {{
+    "1": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }}
+    ],
+    "2": [
+      {{
+        "place_name": "Elliot's Beach",
+        "description": "Elliot's Beach, also known as Besant Nagar Beach, is a popular beach in Chennai known for its calm waters and beautiful sunset views. It's a great place to relax, enjoy the beach, and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0232, 80.2565"
+      }},
+      {{
+        "place_name": "The Tandoori Kitchen",
+        "description": "Enjoy traditional Indian flavors at The Tandoori Kitchen, known for its succulent tandoori dishes.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0809, 80.2699"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Parthasarathy Temple",
+        "description": "This temple is dedicated to Lord Krishna and is a popular pilgrimage site. It is best visited in the evening.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0554, 80.2656"
+      }},
+      {{
+        "place_name": "Beyond Indus",
+        "description": "Indulge in authentic North Indian cuisine at Beyond Indus, known for its flavorful dishes and warm ambiance.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0614, 80.2639"
+      }}
+    ],
+    "3": [
+      {{
+        "place_name": "Anna Salai",
+        "description": "Explore the bustling Anna Salai for shopping and dining. It's best to visit in the afternoon or evening.",
+        "TOE": "3 hours",
+        "lat_long": "13.0680, 80.2562"
+      }},
+      {{
+        "place_name": "Dahlia Restaurant",
+        "description": "Enjoy a fine dining experience at Dahlia Restaurant, known for its elegant ambiance and delicious cuisine.",
+        "TOE": "2 hours",
+        "lat_long": "13.0626, 80.2455"
+      }},
+      {{
+        "place_name": "San Thome Basilica",
+        "description": "This historic church is a popular pilgrimage site. Visit in the morning or afternoon for a peaceful experience.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0645, 80.2689"
+      }},
+      {{
+        "place_name": "VGP Universal Kingdom",
+        "description": "Enjoy a day of fun and entertainment at this amusement park. It's best to visit in the afternoon or evening.",
+        "TOE": "4 hours",
+        "lat_long": "12.9915, 80.2144"
+      }},
+      {{
+        "place_name": "Bismillah Briyani",
+        "description": "Enjoy a delicious and affordable biryani at Bismillah Briyani, a popular spot for local flavors.",
+        "TOE": "1 hour",
+        "lat_long": "13.0598, 80.2746"
+      }}
+    ],
+    "4": [
+      {{
+        "place_name": "Marina Beach",
+        "description": "Marina Beach is a must-visit in Chennai, especially in the evening. Enjoy the cool sea breeze and watch the sunset.",
+        "TOE": "2 hours",
+        "lat_long": "13.0546, 80.2717"
+      }},
+      {{
+        "place_name": "The Madras Crocodile Bank",
+        "description": "Visit this unique reptile park in the afternoon or evening. Learn about crocodiles and other reptiles.",
+        "TOE": "2 hours",
+        "lat_long": "12.9841, 80.2153"
+      }},
+      {{
+        "place_name": "Kapaleeshwarar Temple",
+        "description": "This ancient Hindu temple is known for its intricate architecture. Visit in the morning or afternoon to avoid the crowds.",
+        "TOE": "1.5 hours",
+        "lat_long": "13.0502, 80.2691"
+      }},
+      {{
+        "place_name": "Government Museum",
+        "description": "Visit this museum to see a collection of artifacts from Tamil Nadu's history and culture. This is best visited in the afternoon.",
+        "TOE": "2 hours",
+        "lat_long": "13.0530, 80.2704"
+      }},
+      {{
+        "place_name": "Fort St. George",
+        "description": "Explore this historic fort in the morning to learn about its rich history.",
+        "TOE": "2 hours",
+        "lat_long": "13.0824, 80.2728"
+      }}
+    ],
+    "5": [
+      {{
+        "place_name": "MGM Dizzee World",
+        "description": "Enjoy a thrilling day at MGM Dizzee World, a popular amusement park in Chennai.",
+        "TOE": "4 hours",
+        "lat_long": "13.0028, 80.1836"
+      }},
+      {{
+        "place_name": "Qutab Shahi Tombs",
+        "description": "Explore the magnificent Qutab Shahi Tombs, a UNESCO World Heritage Site in Hyderabad.",
+        "TOE": "2 hours",
+        "lat_long": "17.3851, 78.4867"
+      }},
+      {{
+        "place_name": "Birla Mandir",
+        "description": "Visit the serene Birla Mandir, a beautiful Hindu temple dedicated to Lord Venkateswara.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3839, 78.4741"
+      }},
+      {{
+        "place_name": "Charminar",
+        "description": "Admire the iconic Charminar, a historic mosque and a symbol of Hyderabad.",
+        "TOE": "1.5 hours",
+        "lat_long": "17.3609, 78.4740"
+      }},
+      {{
+        "place_name": "Salar Jung Museum",
+        "description": "Explore the rich collection of art and artifacts at the Salar Jung Museum.",
+        "TOE": "2 hours",
+        "lat_long": "17.3638, 78.4712"
+      }}
+    ]
+  }},
+  "changes": "I have replaced Fort St George with Elliot's Beach on Day 2 as it's a nearby beach."
+}}
+
+""",
             )
 
             chat_session = model.start_chat(history=[])
@@ -213,6 +745,7 @@ class GeminiSuggestions(APIView):
                 "response_data": response_data,
             }
 
+            print("Suggestion response", response_data)
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
@@ -228,7 +761,6 @@ class UpdateTrip(APIView):
 
             restructured_plan_str = json.dumps(new_plan)
 
-            print(restructured_plan_str)
             # Fetch the trip details using the trip_id
             trip_details = UserTripInfo.objects.filter(trip_id=trip_id).first()
 

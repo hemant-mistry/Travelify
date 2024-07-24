@@ -13,7 +13,7 @@ class UserTripInfoSerializer(serializers.ModelSerializer):
 class GeneratedPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserTripInfo
-        fields = ["generated_plan"]
+        fields = ['generated_plan']
 
 class UserTripProgressSerializer(serializers.ModelSerializer):
     class Meta:

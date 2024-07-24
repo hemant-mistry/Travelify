@@ -35,3 +35,8 @@
 .navbar.scrolled {
   background-color: black;
 }
+
+
+.animate-fill {
+  animation: fillBackground 1s ease-in-out;
+}

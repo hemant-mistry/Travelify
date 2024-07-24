@@ -10,6 +10,7 @@ class UserTripInfo(models.Model):
     budget = models.IntegerField()
     additional_preferences = models.CharField(max_length=255)
     generated_plan = models.TextField()
+    nearby_restaurants = models.TextField(default="")
 
 
 #User's progress information model
@@ -18,3 +19,4 @@ class UserTripProgressInfo(models.Model):
     user_id = models.CharField(max_length=255)
     trip_id = models.CharField(max_length=255)
     day = models.IntegerField(null=True)
+
