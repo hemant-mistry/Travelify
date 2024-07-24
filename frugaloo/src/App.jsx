@@ -10,6 +10,7 @@ import Plan from "./components/Plan";
 import PromptInput from "./components/PromptInput";
 import Trip from "./components/Trips";
 import Finance from "./components/Finance";
+import Locate from "./components/Locate";
 
 const supabase = createClient(
   "https://wqbvxqxuiwhmretkcjaw.supabase.co",
@@ -85,6 +86,10 @@ function App() {
           <Route
             path="/myfinances"
             element={<Finance loggedInUser={loggedInUser} />}
+          />
+          <Route
+            path="/locate"
+            element={<Locate/>}
           />
         </Routes>
       </div>
