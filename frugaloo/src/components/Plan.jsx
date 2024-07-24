@@ -240,10 +240,13 @@ function Plan({ loggedInUser }) {
                       <div className="text-lg font-black mt-2">
                         <a
                           className="link link-hover"
-                          href={`https://maps.google.com/?q=${activity.place_name}`}
+                          href={`https://maps.google.com/?q=${
+                            activity.place_name || activity.lat_long
+                          }`}
                           target="_blank"
+                          rel="noopener noreferrer"
                         >
-                          {activity.place_name}
+                          {activity.place_name || activity.restaurant_name}
                         </a>
                       </div>
                       <p>{activity.description}</p>
@@ -253,6 +256,7 @@ function Plan({ loggedInUser }) {
                       {/* Add any other details you want to display */}
                     </div>
                   ))}
+
                   {currentDay === dayIndex + 1 && (
                     <div
                       className={`flex gap-2 mt-3 mb-5 justify-start ${
