@@ -21,6 +21,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDayData, setSelectedDayData] = useState(null);
 
   useEffect(() => {
     async function fetchSession() {
@@ -74,7 +75,7 @@ function App() {
             path="/planinput"
             element={<PlanInput loggedInUser={loggedInUser} />}
           />
-          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser}/>} />
+          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser} onLocateClick={setSelectedDayData}/>} />
           <Route
             path="/PromptInput"
             element={<PromptInput loggedInUser={loggedInUser} />}
@@ -88,8 +89,8 @@ function App() {
             element={<Finance loggedInUser={loggedInUser} />}
           />
           <Route
-            path="/locate"
-            element={<Locate/>}
+            path="/locate/:tripId/:dayId"
+            element={<Locate dayData={selectedDayData}/>}
           />
         </Routes>
       </div>

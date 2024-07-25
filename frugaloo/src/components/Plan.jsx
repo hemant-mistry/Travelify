@@ -3,12 +3,13 @@ import geminiIcon from "../assets/GeminiIcon.png";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import TickConfirmation from "../assets/TickConfirmation.png";
 import DiscardConfirmation from "../assets/DiscardConfirmation.png";
 import animationData from "../assets/lotties/gemini.json";
 import geminiData from "../assets/lotties/gemini-logo.json";
 import Lottie from "react-lottie";
-function Plan({ loggedInUser }) {
+function Plan({ loggedInUser, onLocateClick }) {
   const defaultOptions = {
     loop: true,
     autoplay: true,
@@ -26,6 +27,7 @@ function Plan({ loggedInUser }) {
       preserveAspectRatio: "xMidYMid Slice",
     },
   };
+  const navigate = useNavigate();
   const { tripId } = useParams();
   const [planDetails, setPlanDetails] = useState([]); // State to hold fetched plan details
   const [loading, setLoading] = useState(false);
@@ -81,9 +83,10 @@ function Plan({ loggedInUser }) {
     fetchPlanProgress();
   }, [tripId]);
 
-  const handleLocateClick = (location) => {
-    const url = `https://maps.google.com/?q=${location}`;
-    window.open(url, "_blank");
+  const handleLocateClick = (dayData,dayIndex,trip_id) => {
+    onLocateClick(dayData); // Pass day data to parent
+    
+    navigate(`/locate/${trip_id}/${dayIndex+1}`);
   };
 
   const handleConfirmClick = async (day) => {
@@ -391,9 +394,7 @@ function Plan({ loggedInUser }) {
 
                       <button
                         className="btn btn-xs md:btn-sm bg-base-200"
-                        onClick={() =>
-                          handleLocateClick(dayIndex.latitude_and_longitude)
-                        }
+                        onClick={() => handleLocateClick(dayActivities,dayIndex,tripId)} // Pass day data
                       >
                         <img
                           src={googleMapIcon}
