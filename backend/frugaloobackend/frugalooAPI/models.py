@@ -20,3 +20,11 @@ class UserTripProgressInfo(models.Model):
     trip_id = models.CharField(max_length=255)
     day = models.IntegerField(null=True)
 
+
+class FinanceLog(models.Model):
+    user_id = models.CharField(max_length=255)
+    trip_id = models.CharField(max_length=255)
+    amount = models.IntegerField()
+    place = models.CharField(max_length=255)
+    category = models.CharField(max_length=255)
+    day = models.IntegerField()

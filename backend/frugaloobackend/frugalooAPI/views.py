@@ -12,6 +12,7 @@ from .serializers import (
     UserTripInfoSerializer,
     GeneratedPlanSerializer,
     UserTripProgressSerializer,
+    FinanceLogSerializer
 )
 import json
 
@@ -783,3 +784,15 @@ class UpdateTrip(APIView):
             return Response(
                 {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class AddFinanceLog(APIView):
+    def post(self, request):
+        serializer = FinanceLogSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            
+            
+            

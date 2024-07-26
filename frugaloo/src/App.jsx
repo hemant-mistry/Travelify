@@ -90,7 +90,7 @@ function App() {
           />
           <Route
             path="/locate/:tripId/:dayId"
-            element={<Locate dayData={selectedDayData}/>}
+            element={<Locate loggedInUser={loggedInUser} dayData={selectedDayData}/>}
           />
         </Routes>
       </div>
