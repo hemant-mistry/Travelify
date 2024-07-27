@@ -269,7 +269,7 @@ function Locate({ dayData = [], loggedInUser }) {
                           </label>
                           <button
                             type="submit"
-                            className="btn btn-sm bg-blue-200 text-black border-none hover:bg-blue-300 mt-5 w-20 mx-auto"
+                            className="btn btn-sm bg-blue-200 text-black border-none hover:bg-blue-300 mt-5 max-w-sm mx-auto"
                             disabled={formSubmitting}
                           >
                             {formSubmitting ? "Submitting..." : "Submit"}

@@ -11,6 +11,7 @@ from .views import (
     AddFinanceLog,
     GeminiSuggestions,
     UpdateTrip,
+    GenerateMessageView,
 )
 
 router = routers.DefaultRouter()
@@ -30,4 +31,5 @@ urlpatterns = [
     path("gemini-suggestions/", GeminiSuggestions.as_view(), name="gemini-suggestions"),
     path("update-plan/", UpdateTrip.as_view(), name="update-plan"),
     path("add-finance-log/", AddFinanceLog.as_view(), name="add_finance_log"),
+    path("generate-message/", GenerateMessageView.as_view(), name="generate-message"),
 ]

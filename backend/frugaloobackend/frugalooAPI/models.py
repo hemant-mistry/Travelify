@@ -28,3 +28,10 @@ class FinanceLog(models.Model):
     place = models.CharField(max_length=255)
     category = models.CharField(max_length=255)
     day = models.IntegerField()
+
+
+class MessageLog(models.Model):
+    user_id = models.CharField(max_length=255)
+    question = models.CharField(max_length=255)
+    sql_query = models.TextField()
+
