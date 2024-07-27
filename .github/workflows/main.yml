@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_BACKEND_URL: "https://frugaloo-backend.azurewebsites.net/"
+      VITE_GOOGLE_MAPS_API_KEY: "AIzaSyAhpuXqyBQc_PhU2A9RKb6RAwqK71BhqBE"
     steps:
       - uses: actions/checkout@v3
 
