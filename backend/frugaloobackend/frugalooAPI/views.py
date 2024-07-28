@@ -6,7 +6,7 @@ import google.generativeai as genai
 import os
 import requests
 import re
-from supabase import create_client, Client
+from supabase import create_client, Client  # type: ignore
 from .models import UserTripInfo, UserTripProgressInfo, MessageLog
 from .serializers import (
     UserTripInfoSerializer,
@@ -50,7 +50,6 @@ class Preplan(APIView):
             concatenated_input = f"Stay Details: {stay_details}\nNumber of Days: {number_of_days}\nBudget: {budget}\nAdditional Preferences: {additional_preferences}"
 
             response = chat_session.send_message(concatenated_input)
-            print("PHASE 1 GEMINI API RESPONSE", response)
             response_data = response.text
             response = {
                 "user_id": user_id,
@@ -346,8 +345,6 @@ class GeminiSuggestions(APIView):
 
             serializer = UserTripInfoSerializer(trip_info)
             nearby_restaurants = serializer.data.get("nearby_restaurants")
-
-            print("Nearby_Restaurants", nearby_restaurants)
 
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
 
@@ -747,7 +744,6 @@ SAMPLE_OUTPUT 2:
                 "response_data": response_data,
             }
 
-            print("Suggestion response", response_data)
             return Response(response, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
@@ -796,7 +792,6 @@ class AddFinanceLog(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class GenerateMessageView(APIView):
     def __init__(self):
         self.supabase = self.configure_supabase()
@@ -804,14 +799,16 @@ class GenerateMessageView(APIView):
     def configure_supabase(self) -> Client:
         url = os.environ.get("SUPABASE_URL")
         key = os.environ.get("SUPABASE_KEY")
-        return create_client("https://wqbvxqxuiwhmretkcjaw.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s")
+        return create_client(
+           url,key
+        )
 
     def post(self, request):
         user_id = request.data.get("user_id")
         message = request.data.get("message")
 
         # Configure the genai API
-        genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+        genai.configure(api_key=os.environ["GOOGLE_FINANCE_API_KEY"])
 
         generation_config = {
             "temperature": 0,
@@ -820,43 +817,141 @@ class GenerateMessageView(APIView):
             "max_output_tokens": 8192,
         }
 
+        # Generate SQL response
+        intentclassifier = genai.GenerativeModel(
+            model_name="gemini-1.5-pro",
+            generation_config=generation_config,
+            system_instruction='You are an intent classifier, you need to classify and divide in the user\'s questions in two different parts. The user questions will contain the information regarding the information the user wants to extract from the SQL database and the chart or visual the user wants to see that data. You also need to classify whether the questions asked is a follow-up questions based on the chat history given below. If there is no visual_type specified leave the field as blank.\n\n\n### OUTPUT ###\nYour output should be a JSON containing two entities namely,\n{\n"information_needed": " ",\n"visual_type": " "\n}\n\n### For example ###\nUser: Show me the day wise breakdown of my spendings in line chart\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": "line chart"\n}\n\nUser: Show me the day wise breakdown of my spendings.\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": ""\n}\n',
+        )
+
+        chat_session = intentclassifier.start_chat(history=[])
+        response = chat_session.send_message(message)
+        # Check if the response text contains ```json```
+        if "```json" in response.text:
+            json_response = self.extract_json_data(response.text)
+        else:
+            json_response = response.text
+
+        print("RESPONSE TEXT FROM INTENT CLASSIFIER", response.text)
+        if json_response:
+            print("Response text:", json_response)
+            try:
+                intent_response = json.loads(json_response)
+            except json.JSONDecodeError as e:
+                print("JSON decode error:", str(e))
+                return Response(
+                    {"error": "Failed to parse JSON response"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            print("Empty response text")
+            return Response(
+                {"error": "Empty response from intent classifier"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        print("Response from intent_classifier", intent_response)
+        information_needed = intent_response.get("information_needed")
+        visual_type = intent_response.get("visual_type")
         # Generate visual response
         model = genai.GenerativeModel(
             model_name="gemini-1.5-flash",
             generation_config=generation_config,
-            system_instruction="You are an intelligent data analyst. You have to extract the information from the user's question and identify if there is any mention of charts. Otherwise you need to use your knowledge of data visualization and recommend any of the below charts based on the user's scenario. The output should be the corresponding Id belonging to the chart. Your output should only be the ID and nothing else.\n\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n3. Bubble Chart = 3\n4. Doughnut = 4\n5. Line Chart = 5\n6. Polar Area Chart = 6\n7. Radar Chart = 7\n8. Scatter Chart = 8\n9. Pie Charts = 9\n\nFor example:\nUser: I want to see the distribution of cost based on categories.\nModel: 9",
+            system_instruction="You are an intelligent data analyst. You have to extract the information from the user's question and identify if there is any mention of charts. Otherwise you need to use your knowledge of data visualization and recommend any of the below charts based on the user's scenario. The output should be the corresponding Id belonging to the chart. Your output should only be the ID and nothing else.\n\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n5. Line Chart = 3\n9. Pie Charts = 4\n\nFor example:\nUser: I want to see the distribution of cost based on categories.\nModel: 3",
         )
+        if visual_type == "":
+            visual_response_type = model.generate_content(information_needed)
+        else:
+            visual_response_type = model.generate_content(visual_type)
 
-        response = model.generate_content(message)
-        visual_response = response.text
+        visual_response = visual_response_type.text
 
         # Generate SQL response
         model2 = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config=generation_config,
-  system_instruction="You are a SQL expert. You need to analyze the user's questions and create accurate SQL queries based on the schema provided to you. Your output should **ONLY** contain the SQL query. Always enclose the table name in double inverted comma (\" \"). \n\n### DATABASE SCHEMA ###\n\nTable name: frugalooAPI_financelog\nTable description: This table contains the spending log based on day, places and categories in the entire duration of user's trip.\n\nColumns \n\nColumn name: [amount] \nColumn description: It is an integer field that contains the amount of money the user spent.\n\nColumn name: [place]\nColumn description: It contains the place where the user spent the amount.\n\nColumn name: [category]\nColumn description: It contains the category in which the user spent the amount. The categories are divided into three: Shopping, restaurants and others.\n\nColumn name: [day]\nColumn description: It contains the day in which the user spent the amount.",
+            system_instruction="You are a SQL expert. You need to analyze the user's questions and create accurate SQL queries based on the schema provided to you. Your output should **ONLY** contain the SQL query. Always enclose the table name in double inverted comma (\" \"). \n\n### DATABASE SCHEMA ###\n\nTable name: frugalooAPI_financelog\nTable description: This table contains the spending log based on day, places and categories in the entire duration of user's trip.\n\nColumns \n\nColumn name: [amount] \nColumn description: It is an integer field that contains the amount of money the user spent.\n\nColumn name: [place]\nColumn description: It contains the place where the user spent the amount.\n\nColumn name: [category]\nColumn description: It contains the category in which the user spent the amount. The categories are divided into three: Shopping, restaurants and others.\n\nColumn name: [day]\nColumn description: It contains the day in which the user spent the amount.",
         )
 
-        chat_session = model2.start_chat(history=[])
-        response = chat_session.send_message(message)
-        print("Response",response)
+        sql_query = model2.generate_content(information_needed)
         # Extract the SQL query from the response
-        sql_response_raw = response.text
+        sql_response_raw = sql_query.text
         sql_response = self.extract_sql_query(sql_response_raw)
 
         # Query Supabase with the SQL response
         query_result = self.execute_sql_query(sql_response)
-        print("Query result ", query_result)
         # Log the message and response asynchronously
         self.log_message_sync(user_id, message, sql_response)
 
+        generation_config_model3 = {
+            "temperature": 0.5,
+            "top_p": 0.95,
+            "top_k": 64,
+            "max_output_tokens": 8192,
+        }
+
+        # Generate React Visual Component response
+        model3 = genai.GenerativeModel(
+            model_name="gemini-1.5-pro",
+            generation_config=generation_config_model3,
+            system_instruction='You are a ReactJS Expert, you need to create a static component with proper labeling based on the JSON input given to you by the user.\nYour output should **ONLY** be the static react component. \n\n### COMPONENT ID MAPPING ###\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n3. Line Chart = 5\n4. Pie Charts = 9\n\n\n### AREA CHART REACT COMPONENT ###\nlabels: data.map((item) => `<Based on the input JSON>`),\n    datasets: [\n      {\n        label:  <Based on the input JSON>,\n        data: data.map((item) => item.<Based on the input JSON>),\n        fill: true,\n        backgroundColor: "rgba(75, 192, 192, 0.2)",\n        borderColor: "rgba(75, 192, 192, 1)",\n        tension: 0.1,\n      },\n    ],\n\n### BAR CHART REACT COMPONENT ###\nlabels: data.map((item) => `<Based on the input JSON>`),\n    datasets: [\n        {\n        label: `<Based on the input JSON>`,\n        data: data.map((item) => item.<Based on the input JSON>),\n        backgroundColor: \'rgba(75, 192, 192, 0.2)\',\n        borderColor: \'rgba(75, 192, 192, 1)\',\n        borderWidth: 1,\n        },\n    ],\n\n### LINE CHART REACT COMPONENT ###\n\n    labels: data.map((item) => `<Based on the input JSON>`),\n    datasets: [\n      {\n        label: <Based on the input JSON>,\n        data: data.map((item) => item.<Based on the input JSON>),\n        borderColor: "rgba(75, 192, 192, 1)",\n        backgroundColor: "rgba(75, 192, 192, 0.2)",\n        borderWidth: 1,\n        tension: 0.4,\n      },\n    ],\n\n\n### PIE CHART REACT COMPONENT ###\n\nlabels: data.map((item) => `<Based on the input JSON>`),\ndatasets: [\n    {\n    label: <Based on the input JSON>,\n    data: data.map((item) => item.<Based on the input JSON>),\n    backgroundColor: [\n        \'rgba(255, 99, 132, 0.2)\',\n        \'rgba(54, 162, 235, 0.2)\',\n        \'rgba(255, 206, 86, 0.2)\',\n        \'rgba(75, 192, 192, 0.2)\',\n        \'rgba(153, 102, 255, 0.2)\',\n        \'rgba(255, 159, 64, 0.2)\',\n    ],\n    borderColor: [\n        \'rgba(255, 99, 132, 1)\',\n        \'rgba(54, 162, 235, 1)\',\n        \'rgba(255, 206, 86, 1)\',\n        \'rgba(75, 192, 192, 1)\',\n        \'rgba(153, 102, 255, 1)\',\n        \'rgba(255, 159, 64, 1)\',\n    ],\n    borderWidth: 1,\n    },\n],\n\nYou will receive a JSON object in the below structure with the component ID.\n\n[\n    {\n        "category": "Others",\n        "sum": 34\n    },\n    {\n        "category": "Restaurant",\n        "sum": 3002\n    },\n    {\n        "category": "category3",\n        "sum": 10050\n    },\n    {\n        "category": "Food",\n        "sum": 100\n    },\n    {\n        "category": "Shopping",\n        "sum": 7443\n    }\n]\n\nComponent Id = 9\n\nYou need to identify the way the data is been named. And then generate the static react component with the appropriate labels and datasets mapping based on the component Id.\n\nFor the above JSON your static react component should be like:\n\n\n    labels: data.map((item) => `Categories ${item.category}`),\n    datasets: [\n      {\n        label: "Spending based on Categories",\n        data: data.map((item) => item.sum),\n        borderColor: "rgba(75, 192, 192, 1)",\n        backgroundColor: "rgba(75, 192, 192, 0.2)",\n        borderWidth: 1,\n        tension: 0.4,\n      },\n    ],\n',
+        )
+        model3_input_formulation = (
+            str(query_result) + "\nComponent Id: " + visual_response
+        )
+        react_visual_response = model3.generate_content(model3_input_formulation)
+        react_visual_raw = react_visual_response.text
+        react_visual_component = self.extract_chart_data(react_visual_raw)
+
+        insights_model_generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 64,
+            "max_output_tokens": 8192,
+            "response_mime_type": "text/plain",
+        }
+
+        insights_model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            generation_config=insights_model_generation_config,
+            # safety_settings = Adjust safety settings
+            # See https://ai.google.dev/gemini-api/docs/safety-settings
+            system_instruction="You are a Finance Expert, you will be given the user's spending data in a particular trip you need to summarize the expenses by analyzing the trend in it and providing useful insights to the user. Try to be as concise as possible the insights should be short. Also keep the tone of your conversation as friendly and cool as possible. ",
+        )
+
+        insights_model_response = insights_model.generate_content(str(query_result)).text
+        print("INSIGHTS RESPONSE", insights_model_response)
         # Respond with the results
         response_data = {
             "visual_response": visual_response,
             "sql_response": sql_response,
-            "query_result": query_result
+            "query_result": query_result,
+            "react_component": react_visual_component,
+            "insights": insights_model_response
         }
+
+        print(response_data)
         return Response(response_data, status=status.HTTP_200_OK)
+    def extract_json_data(self, json_component_raw: str) -> str:
+        pattern = r"```json\n(.*?)\n```"
+        match = re.search(pattern, json_component_raw, re.DOTALL)
+
+        if match:
+            extracted_data = match.group(1)
+            return extracted_data.strip()
+
+        return ""
+    def extract_chart_data(self, react_component_raw: str) -> str:
+
+        # Updated regex pattern to capture the entire content between the backticks ```
+        pattern = r"```jsx\n(.*?)\n```"
+        match = re.search(pattern, react_component_raw, re.DOTALL)
+
+        if match:
+            extracted_data = match.group(1)
+            return extracted_data.strip()
+
+        return ""
 
     def extract_sql_query(self, response_text: str) -> str:
         """Extracts the SQL query from the response text."""
@@ -866,18 +961,20 @@ class GenerateMessageView(APIView):
         return ""
 
     def execute_sql_query(self, sql_query: str):
-      """Executes the SQL query using Supabase and returns the result."""
-      try:
-          
-          # Use Supabase client to run the query through the execute_sql function
-          result = self.supabase.rpc('execute_sql', {'query': sql_query}).execute()
-          if result.data:
-              return result.data
-          else:
-              return {"error": result.error_message}
-      except Exception as e:
-          print(f"An error occurred: {e}")
-          return {"error": str(e)}
+        """Executes the SQL query using Supabase and returns the result."""
+        try:
+            # Use Supabase client to run the query through the execute_sql function
+            result = self.supabase.rpc("execute_sql", {"query": sql_query}).execute()
+            if result.data:
+                return result.data
+            else:
+                return {"error": result.error_message}
+        except RecursionError as e:
+            return {
+                "error": "A recursion error occurred. Please check the input and try again."
+            }
+        except Exception as e:
+            return {"error": str(e)}
 
     def log_message_sync(self, user_id, question, response_text):
         MessageLog.objects.create(

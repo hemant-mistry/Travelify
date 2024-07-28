@@ -21,21 +21,21 @@ ChartJS.register(
   Legend
 );
 
-const LineChart = ({ data }) => {
-  console.log("LineChart data:", data);
-const chartData = {
-    labels: data.map((item) => `Day ${item.day}`),
-    datasets: [
-      {
-        label: "Daily Spending",
-        data: data.map((item) => item.daily_spending),
-        borderColor: "rgba(75, 192, 192, 1)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        borderWidth: 1,
-        tension: 0.4,
-      },
-    ],
-  };
+const LineChart = ({ data, component_code }) => {
+  let chartData = {};
+
+    try {
+      const generateChartData = new Function('data', `
+        return {
+          ${component_code}
+        };
+      `);
+      chartData = generateChartData(data);
+    } catch (error) {
+      console.error("Error generating chart data:", error);
+    }
+  
+    console.log("Constructed chartData:", chartData);
 
   return (
     <div className="chart-container">
