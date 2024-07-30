@@ -26,7 +26,7 @@ const PieChart = ({ data, component_code }) => {
     console.log("Constructed chartData:", chartData);
 
   return (
-    <div className="chart-container">
+    <div className="chart-container max-w-xs sm:min-w-sm md:min-w-md lg:min-w-lg">
       <Pie data={chartData} />
     </div>
   );

@@ -10,6 +10,7 @@ import AreaChart from "./Charts/AreaChart";
 import BarChart from "./Charts/BarChart";
 
 function PromptInput({ loggedInUser }) {
+  console.log(loggedInUser);
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [message, setMessage] = useState("");
@@ -17,21 +18,28 @@ function PromptInput({ loggedInUser }) {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const adjustHeight = () => {
-    const textarea = textareaRef.current;
-    textarea.style.height = "auto";
-    textarea.style.height = `${textarea.scrollHeight}px`;
-  };
-
-  useEffect(() => {
-    adjustHeight();
-  }, []);
-
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [message]);
+
+  const initializeChatHistory = () => {
+    const chatHistory =
+      JSON.parse(sessionStorage.getItem("chat_history")) || [];
+    sessionStorage.setItem("chat_history", JSON.stringify(chatHistory));
+  };
+
+  const updateChatHistory = (message) => {
+    const chatHistory =
+      JSON.parse(sessionStorage.getItem("chat_history")) || [];
+    chatHistory.push(message);
+    sessionStorage.setItem("chat_history", JSON.stringify(chatHistory));
+  };
 
   const handleSendMessage = async () => {
     if (message.trim() === "") {
@@ -47,17 +55,31 @@ function PromptInput({ loggedInUser }) {
       { type: "response", text: "" },
     ]);
 
+    if (isFirstMessage) {
+      initializeChatHistory();
+      updateChatHistory(message.trim());
+    }
+
+    const chatHistory =
+      JSON.parse(sessionStorage.getItem("chat_history")) || [];
+
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}generate-message/`,
         {
           user_id: loggedInUser.id,
           message: message.trim(),
+          chat_history: chatHistory,
         }
       );
-      console.log("Responseeee",response);
-      const { visual_response, sql_response, query_result, react_component, insights } =
-        response.data;
+      console.log("Responseeee", response);
+      const {
+        visual_response,
+        sql_response,
+        query_result,
+        react_component,
+        insights,
+      } = response.data;
       const cleanedVisualResponse = visual_response.trim();
       console.log("react component", react_component);
       console.log("visual_response", visual_response);
@@ -74,7 +96,7 @@ function PromptInput({ loggedInUser }) {
             sql_response,
             query_result,
             react_component,
-            insights
+            insights,
           };
         }
         return updatedMessages;
@@ -86,13 +108,19 @@ function PromptInput({ loggedInUser }) {
     }
 
     setMessage("");
-    textareaRef.current.style.height = "auto";
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"; // Reset the height
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // Set to scrollHeight
     }
   };
 
@@ -110,103 +138,114 @@ function PromptInput({ loggedInUser }) {
       ? text.substring(0, maxLength) + "..."
       : text;
   };
-  console.log(messages);
+
   return (
     <>
       {isFirstMessage ? (
         <div className="hero mt-10">
-          <div className="hero-content text-center">
-            <div className="lg:max-w-2xl sm:max-w-lg mx-auto">
-              <h1 className="lg:text-5xl sm:text-5xl font-bold">
-                Welcome Back, John
-              </h1>
-              <p className="py-6 lg:text-lg sm:text-lg">
-                Provident cupiditate voluptatem et in. Quaerat fugiat ut
-                assumenda excepturi exercitationem quasi. In deleniti eaque aut
-                repudiandae et a id nisi.
-              </p>
-              <div className="suggested-prompts flex justify-center gap-4 flex-wrap">
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button1Text, 60)}
-                </button>
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button2Text, 60)}
-                </button>
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button3Text, 60)}
-                </button>
-                <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                  {truncateText(button4Text, 60)}
-                </button>
-              </div>
+          <div className="hero-content text-center mx-auto w-full max-w-2xl">
+            <h1 className="lg:text-5xl sm:text-5xl font-bold">
+              Welcome Back, John
+            </h1>
+            <p className="py-6 lg:text-lg sm:text-lg">
+              Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
+              excepturi exercitationem quasi. In deleniti eaque aut repudiandae
+              et a id nisi.
+            </p>
+            <div className="suggested-prompts flex justify-center gap-4 flex-wrap">
+              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+                {truncateText(button1Text, 60)}
+              </button>
+              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+                {truncateText(button2Text, 60)}
+              </button>
+              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+                {truncateText(button3Text, 60)}
+              </button>
+              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+                {truncateText(button4Text, 60)}
+              </button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex flex-col h-50 justify-center items-center">
-          <div className="overflow-y-auto text-sm w-[100vw] h-[70vh] sm:h-[40vh] sm:w-[90vw] lg:h-[65vh] lg:w-[60vw] p-4 mt-10 no-scrollbar">
+        <div className="flex flex-col items-center mt-10">
+          <div className="flex flex-col overflow-y-auto text-md w-full max-w-2xl h-[70vh] sm:h-[40vh] lg:h-[65vh] p-4 no-scrollbar">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex items-start justify-start space-x-4 mb-4 ${
-                  msg.type === "user" ? "user-message" : "copilot-response"
+                className={`flex items-start space-x-4 mb-4 ${
+                  msg.type === "user" ? "justify-start" : "justify-start"
                 }`}
               >
-                <div className="avatar">
-                  <div className="w-8 rounded-full">
-                    {msg.type === "user" ? (
-                      <img
-                        src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.jpg"
-                        alt="User"
-                      />
-                    ) : (
-                      <img src={GeminiIcon} alt="Bot" />
-                    )}
-                  </div>
+                <div className="avatar w-8 rounded-full">
+                  {msg.type === "user" ? (
+                    <div className="avatar placeholder">
+                      <div className="bg-neutral text-neutral-content w-8 rounded-full">
+                        <span className="text-sm">{loggedInUser.email[0]}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="avatar">
+                      <div className="w-8 rounded-full">
+                        <img src={GeminiIcon} alt="Bot" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="max-w-2xl">
+                <div className="w-full flex flex-col">
                   {msg.type === "response" && msg.text === "" ? (
                     <span className="loading loading-dots loading-md"></span>
                   ) : msg.type === "response" &&
                     msg.cleanedVisualResponse === "1" ? (
-                      <>
+                    <>
                       <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br/>
-                    <AreaChart
-                      data={msg.query_result}
-                      component_code={msg.react_component}
-
-                    />
+                      <br />
+                      {msg.react_component && (
+                        <AreaChart
+                          data={msg.query_result}
+                          component_code={msg.react_component}
+                        />
+                      )}
+                      <br />
                     </>
                   ) : msg.type === "response" &&
                     msg.cleanedVisualResponse === "2" ? (
-                      <>
+                    <>
                       <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br/>
-                    <BarChart
-                      data={msg.query_result}
-                      component_code={msg.react_component}
-                    />
+                      <br />
+                      {msg.react_component && (
+                        <BarChart
+                          data={msg.query_result}
+                          component_code={msg.react_component}
+                        />
+                      )}
+                      <br />
                     </>
                   ) : msg.type === "response" &&
                     msg.cleanedVisualResponse === "3" ? (
-                      <>
+                    <>
                       <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br/>
-                    <LineChart
-                      data={msg.query_result}
-                      component_code={msg.react_component}
-                    />
+                      <br />
+                      {msg.react_component && (
+                        <LineChart
+                          data={msg.query_result}
+                          component_code={msg.react_component}
+                        />
+                      )}
+                      <br />
                     </>
                   ) : msg.type === "response" &&
                     msg.cleanedVisualResponse === "4" ? (
-                      <>
+                    <>
                       <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br/>
-                    <PieChart
-                      data={msg.query_result}
-                      component_code={msg.react_component}
-                    />
+                      <br />
+                      {msg.react_component && (
+                        <PieChart
+                          data={msg.query_result}
+                          component_code={msg.react_component}
+                        />
+                      )}
                     </>
                   ) : (
                     <ReactMarkdown>{msg.text}</ReactMarkdown>
@@ -218,32 +257,39 @@ function PromptInput({ loggedInUser }) {
           </div>
         </div>
       )}
-      <div className="fixed bottom-0 w-full p-4 flex flex-col items-center">
-        <div className="relative flex w-full justify-center mb-4 items-end">
-          <button className="btn btn-square mr-2">
-            <img
-              src={attachmentIcon}
-              alt="Attachment Icon"
-              className="h-6 w-6"
+
+      <div className="fixed h-50 w-full p-2 flex flex-col items-center gap-2 ml-3 bottom-5">
+        <div className="relative w-full max-w-2xl">
+          <div className="flex items-center relative">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type your message..."
+              className="w-full rounded-lg p-2 resize-none pr-12" // Add padding-right to make space for the button
             />
-          </button>
-          <textarea
-            ref={textareaRef}
-            placeholder="Enter your prompt here..."
-            rows="1"
-            className="textarea textarea-bordered w-1/2 max-h-44 resize-none overflow-auto"
-            onInput={adjustHeight}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-          ></textarea>
-          <button className="btn btn-square ml-2" onClick={handleSendMessage}>
-            <img src={sendIcon} alt="Send Icon" className="h-6 w-6" />
-          </button>
+            <div className="flex items-center absolute right-2 top-0 h-full">
+              <button
+                className="flex items-center justify-center"
+                onClick={handleSendMessage}
+                disabled={loading}
+              >
+                <img src={sendIcon} alt="Send" className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="prompt-caution text-center text-xs">
+        <div className="prompt-caution text-center text-xs mt-2">
           Gemini may display inaccurate info, including about people, so
-          double-check its responses. Gemini is not a substitute for an expert.
+          double-check its responses.{" "}
+          <a
+            className="link link-primary"
+            href="https://support.google.com/gemini?p=privacy_notice"
+          >
+            Your privacy and Gemini Apps
+          </a>
         </div>
       </div>
     </>
