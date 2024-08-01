@@ -91,7 +91,7 @@ function Locate({ dayData = [], loggedInUser }) {
         : [0, 0];
       return {
         id: index,
-        name: data.place_name || data.restaurant_name,
+        name: data.place_name || data.restaurant_name || data.night_club_name,
         position: { lat, lng },
         description: data.description,
       };

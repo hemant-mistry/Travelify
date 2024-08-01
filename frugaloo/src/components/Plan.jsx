@@ -51,7 +51,7 @@ function Plan({ loggedInUser, onLocateClick }) {
           { trip_id: tripId }
         );
 
-        const outerData = JSON.parse(response.data);
+        const outerData = response.data;
         const innerDataString = outerData.generated_plan;
         const generated_plan = JSON.parse(innerDataString);
         const parsedPlanDetails = Object.values(generated_plan);
@@ -249,7 +249,7 @@ function Plan({ loggedInUser, onLocateClick }) {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {activity.place_name || activity.restaurant_name}
+                          {activity.place_name || activity.restaurant_name || activity.night_club_name}
                         </a>
                       </div>
                       <p>{activity.description}</p>

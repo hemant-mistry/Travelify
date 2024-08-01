@@ -19,6 +19,25 @@ import json
 
 
 class Preplan(APIView):
+    """
+    API view for generating an itinerary based on user information.
+
+    This view handles the POST request and generates an itinerary based on the provided user information.
+    The itinerary includes a minimum of three mandatory activities per day, with all activities located near each other
+    and with a travel time of less than 2 hours. Additionally, an optional exploration/shopping activity may be recommended
+    if the user's day has sufficient bandwidth. The itinerary ensures that the user visits unique places each day without
+    repeating any places throughout the itinerary. If the number of days is more than the number of unique places, additional
+    activities and adventures are recommended without repeating places. The itinerary is structured with a morning activity,
+    followed by an afternoon activity, and ending with an evening activity.
+
+    User input format:
+    - stay_details
+    - number_of_days
+    - budget
+    - additional_preferences
+
+    """
+
     def post(self, request):
         try:
             user_id = request.data.get("user_id")
@@ -27,7 +46,14 @@ class Preplan(APIView):
             budget = 1000
             additional_preferences = request.data.get("additional_preferences")
 
-            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+            api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
+            if not api_key:
+                return Response(
+                    {"error": "API key is missing"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            genai.configure(api_key=api_key)
 
             generation_config = {
                 "temperature": 0.7,
@@ -67,6 +93,13 @@ class Preplan(APIView):
 
 
 class GenerateFinalPlan(APIView):
+    """
+    API view for generating an itinerary based on user information.
+
+    This view handles the POST request and generates an itinerary based on the provided user information.
+    The itinerary includes details such as nearby restaurants, ensuring a comprehensive plan for the user's trip.
+
+    """
 
     def insert_trip_details(
         self,
@@ -78,6 +111,18 @@ class GenerateFinalPlan(APIView):
         generated_plan,
         nearby_restaurants,
     ):
+        """
+        Inserts trip details into the UserTripInfo model.
+
+        Parameters:
+        - user_id: ID of the user
+        - stay_details: Details about the user's stay
+        - number_of_days: Number of days for the trip
+        - budget: Budget for the trip
+        - additional_preferences: Any additional preferences for the trip
+        - generated_plan: The generated plan for the trip
+        - nearby_restaurants: Details of nearby restaurants for each place
+        """
         UserTripInfo.objects.create(
             user_id=user_id,
             stay_details=stay_details,
@@ -89,6 +134,15 @@ class GenerateFinalPlan(APIView):
         )
 
     def extract_lat_long(self, data):
+        """
+        Extracts latitude and longitude values from the provided data.
+
+        Parameters:
+        - data: Dictionary containing trip details with places and their lat/long
+
+        Returns:
+        - List of dictionaries containing day index, place name, and lat/long
+        """
         lat_long_values = []
 
         for day_index, day in data.items():
@@ -103,6 +157,15 @@ class GenerateFinalPlan(APIView):
         return lat_long_values
 
     def fetch_nearby_restaurants(self, lat_long_values):
+        """
+        Fetches nearby restaurants for given latitude and longitude values.
+
+        Parameters:
+        - lat_long_values: List of dictionaries containing lat/long values for each place
+
+        Returns:
+        - Dictionary containing restaurant details for each place
+        """
         api_key = os.environ.get("GOOGLE_PLACES")
         radius = 1500
         results = {}
@@ -193,6 +256,19 @@ class GenerateFinalPlan(APIView):
 
 
 class FetchTripDetails(APIView):
+    """
+    API view to fetch all trip details for a user.
+
+    Handles the POST request to fetch all trip details for a given user.
+
+    Parameters:
+    - user_id: ID of the user
+
+    Returns:
+    - Response: Serialized trip details as JSON or an error message
+
+    """
+
     def post(self, request):
         try:
             user_id = request.data.get("user_id")
@@ -213,6 +289,18 @@ class FetchTripDetails(APIView):
 
 
 class FetchPlan(APIView):
+    """
+    API view to fetch the generated plan for a specific trip.
+
+    Handles the POST request to fetch the generated plan for a given trip.
+
+    Parameters:
+    - trip_id: ID of the trip
+
+    Returns:
+    - Response: Serialized generated plan as JSON or an error message
+    """
+
     def post(self, request):
         try:
             trip_id = request.data.get("trip_id")
@@ -237,6 +325,20 @@ class FetchPlan(APIView):
 
 
 class UpdateUserTripProgress(APIView):
+    """
+    API view to update the progress of a user's trip.
+
+    Handles the POST request to update the progress of a user's trip.
+
+    Parameters:
+    - trip_id: ID of the trip
+    - user_id: ID of the user
+    - day: Day of the trip being updated
+
+    Returns:
+    - Response: Confirmation of the update or an error message
+    """
+
     def post(self, request):
         try:
             trip_id = request.data.get("trip_id")
@@ -256,48 +358,20 @@ class UpdateUserTripProgress(APIView):
             )
 
 
-class FetchTripDetails(APIView):
-    def post(self, request):
-        try:
-            user_id = request.data.get("user_id")
-            # Fetch all records where user_id matches
-            trip_details = UserTripInfo.objects.filter(user_id=user_id)
-
-            # Serialize the queryset
-            serializer = UserTripInfoSerializer(trip_details, many=True)
-            serialized_data = serializer.data
-            # Return the serialized data as JSON response
-            return Response(serialized_data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class FetchPlan(APIView):
-    def post(self, request):
-        try:
-            trip_id = request.data.get("trip_id")
-            trip_details = UserTripInfo.objects.filter(trip_id=trip_id).first()
-
-            if not trip_details:
-                return Response(
-                    {"error": "Trip details not found"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-
-            serializer = GeneratedPlanSerializer(trip_details)
-            response_data = json.dumps(serializer.data)
-            return Response(response_data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
 class UpdateUserTripProgress(APIView):
+    """
+    API view to update the progress of a user's trip.
+    Handles the POST request to update the progress of a user's trip.
+
+    Parameters:
+    - trip_id: ID of the trip
+    - user_id: ID of the user
+    - day: Day of the trip being updated
+
+    Returns:
+    - Response: Confirmation of the update or an error message
+    """
+
     def post(self, request):
         try:
             trip_id = request.data.get("trip_id")
@@ -318,6 +392,17 @@ class UpdateUserTripProgress(APIView):
 
 
 class FetchUserTripProgress(APIView):
+    """
+    API view to fetch the progress of a user's trip.
+    Handles the POST request to fetch the progress of a user's trip.
+
+    Parameters:
+    - trip_id: ID of the trip
+
+    Returns:
+    - Response: Serialized trip progress as JSON or an error message
+    """
+
     def post(self, request):
         try:
             trip_id = request.data.get("trip_id")
@@ -334,22 +419,141 @@ class FetchUserTripProgress(APIView):
 
 
 class GeminiSuggestions(APIView):
+    """
+    API view to generate suggestions using Gemini based on user input.
+
+    Handles the POST request to generate itinerary suggestions using Gemini AI.
+
+    Parameters:
+    - trip_id: ID of the trip
+    - current_day: Current day of the trip
+    - original_plan: Original itinerary plan
+    - user_changes: User's changes or issues with the original plan
+
+    Returns:
+    - Response: AI-generated suggestions for the itinerary or an error message
+
+    """
+
+    def extract_lat_long(self, data):
+        """
+        Extracts latitude and longitude values from the provided data.
+
+        Parameters:
+        - data: List of lists containing trip details with places and their lat/long
+
+        Returns:
+        - List of dictionaries containing day index, place name, and lat/long
+        """
+        lat_long_values = []
+
+        for day_index, day in enumerate(data):
+            for place in day:
+                # Check if the place is a location with a "place_name" and not a restaurant
+                if "place_name" in place:
+                    lat_long_values.append(
+                        {
+                            "day_index": day_index,
+                            "place_name": place["place_name"],
+                            "lat_long": place["lat_long"],
+                        }
+                    )
+        return lat_long_values
+
+    def fetch_nearby_preferences(self, lat_long_values, preferences):
+      preferences = preferences.strip()
+      
+      api_key = os.environ.get("GOOGLE_PLACES")
+      radius = 1500
+      results = {}
+      
+      for place in lat_long_values:
+          day_index = place["day_index"]
+          place_name = place["place_name"]
+          lat_long = place["lat_long"]
+          lat, lng = lat_long.split(",")
+
+          url = "https://places.googleapis.com/v1/places:searchNearby"
+          headers = {
+              "X-Goog-Api-Key": api_key,
+              "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.types,places.websiteUri,places.location"
+          }
+          payload = {
+              "includedTypes": [preferences],  # Ensure preferences is correctly passed
+              "maxResultCount": 20,
+              "locationRestriction": {
+                  "circle": {
+                      "center": {"latitude": float(lat), "longitude": float(lng)},
+                      "radius": radius,
+                  }
+              },
+          }
+
+
+
+
+          response = requests.post(url, headers=headers, json=payload)
+
+          if response.status_code == 200:
+              data = response.json()  # Parse response content as JSON
+              places = data.get("places", [])
+              place_details = [
+                  {
+                      "display_name": place["displayName"]["text"],
+                      "formatted_address": place["formattedAddress"],
+                      "types": place["types"],
+                      "latitude": place["location"]["latitude"],
+                      "longitude": place["location"]["longitude"],
+                      "website_uri": place.get("websiteUri", "N/A"),
+                  }
+                  for place in places
+              ]
+              if day_index not in results:
+                  results[day_index] = {}
+              results[day_index][place_name] = place_details
+          else:
+              print(f"Error: {response.status_code}, {response.text}")
+
+      return results
+
     def post(self, request):
         try:
+            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
             trip_id = request.data.get("trip_id")
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
             user_changes = request.data.get("user_changes")
 
-            trip_info = get_object_or_404(UserTripInfo, trip_id=trip_id)
+            # Phase 1: Calling the intent classifier to extract the places_types based on user's query.
+            generation_config_places_type_extractor = {
+                "temperature": 0,
+                "top_p": 0.95,
+                "top_k": 64,
+                "max_output_tokens": 8192,
+                "response_mime_type": "text/plain",
+            }
 
+            places_type_extractor = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                generation_config=generation_config_places_type_extractor,
+                # safety_settings = Adjust safety settings
+                # See https://ai.google.dev/gemini-api/docs/safety-settings
+                system_instruction="You are an intelligent intent extractor. You will receive a change request from user. You have to extract the intent in the user's query and output the types mentioned below which are based on it. Basically your job is to output the type which belongs to the user's query so that that particular place could be fetched from the google maps places API.\n\nPLACES API TYPES\namusement_center\namusement_park\naquarium\nbanquet_hall\nbowling_alley\ncasino\ncommunity_center\nconvention_center\ncultural_center\ndog_park\nevent_venue\nhiking_area\nhistorical_landmark\nmarina\nmovie_rental\nmovie_theater\nnational_park\nnight_club\npark\ntourist_attraction\nvisitor_center\nwedding_venue\nzoo\namerican_restaurant\nbakery\nbar\nbarbecue_restaurant\nbrazilian_restaurant\nbreakfast_restaurant\nbrunch_restaurant\ncafe\nchinese_restaurant\ncoffee_shop\nfast_food_restaurant\nfrench_restaurant\ngreek_restaurant\nhamburger_restaurant\nice_cream_shop\nindian_restaurant\nindonesian_restaurant\nitalian_restaurant\njapanese_restaurant\nkorean_restaurant\tlebanese_restaurant\nmeal_delivery\nmeal_takeaway\nmediterranean_restaurant\nmexican_restaurant\nmiddle_eastern_restaurant\npizza_restaurant\nramen_restaurant\nrestaurant\nsandwich_shop\nseafood_restaurant\nspanish_restaurant\nsteak_house\nsushi_restaurant\nthai_restaurant\nturkish_restaurant\nvegan_restaurant\nvegetarian_restaurant\nvietnamese_restaurant\n\n\n### EXAMPLES ###\nUser: Can you add any indian resto in the trip?\nModel: italian_restaurant\n\nUser: Can you add cafe and bars to the trip?\nModel: cafe, bar\n\nUser: I want to eat some desserts could you please add in a place for eating desserts in the itinerary?\nModel: bakery\n",
+            )
+
+            places_type_extractor_response = places_type_extractor.generate_content(
+                user_changes
+            )
+            places_types = places_type_extractor_response.text
+            trip_info = get_object_or_404(UserTripInfo, trip_id=trip_id)
             serializer = UserTripInfoSerializer(trip_info)
             nearby_restaurants = serializer.data.get("nearby_restaurants")
-
-            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+            lat_long_values = self.extract_lat_long(original_plan)
+            nearby_places = self.fetch_nearby_preferences(lat_long_values, places_types)
+            print("Fetched nearby places", nearby_places)
 
             generation_config = {
-                "temperature": 0.7,
+                "temperature": 0.5,
                 "top_p": 0.95,
                 "top_k": 64,
                 "max_output_tokens": 8192,
@@ -357,11 +561,11 @@ class GeminiSuggestions(APIView):
             }
 
             model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
+                model_name="gemini-1.5-pro",
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction=f"""You are a travel agent, you plan itineraries for users. You need to give an alternate plan for the user's trip based on their current progress and problems. 
+                system_instruction=f"""You are a travel agent, you plan itineraries for users. You need to give an alternate plan for the user's trip based on their current progress and problems. You will provide output in the below mentioned JSON format. You also know how to accurately open and close the brackets to form the JSON content without any issues.
 You will be given the below input:
 original_plan: It would be a JSON structure which represents the user's original plan.
 current_day: It represents the current day the user is in. It will give you an idea of the user's trip progress.
@@ -370,11 +574,10 @@ You need to edit the original_plan and share it as the output and also let the u
 Only share the original_plan with the updated data and the summary of the changes with friendly text. Your changes should be added at last of the JSON as shown in the below sample output.
 Always generate new suggestions different from the already present locations.
 
-If the user wants to change any restaurants in the original itinerary always pick up restaurants from the nearby_restaurants JSON given below. It contains all the nearby places based on the places. 
+If the user wants to change any places in the original itinerary always pick up places from the nearby_places JSON given below. It contains all the nearby places based on the places. 
+Always pickup places near to the above place. 
 
-If the user wants you to add entire days always pickup restaurants from the below nearby_restaurants data only. Suggest restaurants for breakfast, lunch and dinner you should only add 3 restaurants per day.
-
-{nearby_restaurants}
+{nearby_places}
 
 ### General Structure of JSON output ###
 
@@ -728,6 +931,11 @@ SAMPLE_OUTPUT 2:
   "changes": "I have replaced Fort St George with Elliot's Beach on Day 2 as it's a nearby beach."
 }}
 
+Always remember to open and close the curly brackets accurately, the JSON should be a valid one. Always make sure that the common mistakes are not happening while constructing the output JSON.
+### COMMON MISTAKES
+Error fetching the original plan SyntaxError: Expected double-quoted property name in JSON at position 1112 (line 1 column 1113)
+    at JSON.parse (<anonymous>)
+
 """,
             )
 
@@ -752,6 +960,18 @@ SAMPLE_OUTPUT 2:
 
 
 class UpdateTrip(APIView):
+    """
+    API view to update the trip plan with a new plan.
+    Handles the POST request to update the trip plan.
+
+    Parameters:
+    - trip_id: ID of the trip
+    - new_plan: New itinerary plan
+
+    Returns:
+    - Response: Confirmation of the update or an error message
+    """
+
     def post(self, request):
         try:
             trip_id = request.data.get("trip_id")
@@ -784,6 +1004,21 @@ class UpdateTrip(APIView):
 
 
 class AddFinanceLog(APIView):
+    """
+    API view to add a financial log entry.
+
+    Handles the POST request to add a financial log entry.
+
+    Parameters:
+    - user_id: ID of the user
+    - trip_id: ID of the trip
+    - amount: Amount of the financial entry
+    - description: Description of the financial entry
+
+    Returns:
+    - Response: Serialized financial log entry data or an error message
+    """
+
     def post(self, request):
         serializer = FinanceLogSerializer(data=request.data)
         if serializer.is_valid():
@@ -793,10 +1028,20 @@ class AddFinanceLog(APIView):
 
 
 class GenerateMessageView(APIView):
+    """
+    API view to handle message generation using Gemini AI and Supabase.
+
+    Methods:
+    - post: Handles the POST request to generate message content and return the response.
+    """
+
     def __init__(self):
         self.supabase = self.configure_supabase()
 
     def configure_supabase(self) -> Client:
+        """
+        Configure and return a Supabase client instance using environment variables.
+        """
         url = os.environ.get("SUPABASE_URL")
         key = os.environ.get("SUPABASE_KEY")
         return create_client(url, key)
@@ -815,43 +1060,39 @@ class GenerateMessageView(APIView):
             "max_output_tokens": 8192,
         }
 
-        # Generate SQL response
-        intentclassifier = genai.GenerativeModel(
+        # Generate AI response using Gemini
+        intent_classifier = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config=generation_config,
             system_instruction='You are an intent classifier, you need to classify and divide in the user\'s questions in two different parts. The user questions will contain the information regarding the information the user wants to extract from the SQL database and the chart or visual the user wants to see that data. You also need to classify whether the questions asked is a follow-up questions based on the chat history given below. If there is no visual_type specified leave the field as blank.\n\n\n### OUTPUT ###\nYour output should be a JSON containing two entities namely,\n{\n"information_needed": " ",\n"visual_type": " "\n}\n\n### For example ###\nUser: Show me the day wise breakdown of my spendings in line chart\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": "line chart"\n}\n\nUser: Show me the day wise breakdown of my spendings.\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": ""\n}\n',
         )
 
-        
-        response = intentclassifier.generate_content(message)
+        response = intent_classifier.generate_content(message)
+
         # Check if the response text contains ```json```
         if "```json" in response.text:
             json_response = self.extract_json_data(response.text)
         else:
             json_response = response.text
 
-        print("RESPONSE TEXT FROM INTENT CLASSIFIER", response.text)
         if json_response:
-            print("Response text:", json_response)
             try:
                 intent_response = json.loads(json_response)
             except json.JSONDecodeError as e:
-                print("JSON decode error:", str(e))
                 return Response(
                     {"error": "Failed to parse JSON response"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         else:
-            print("Empty response text")
             return Response(
                 {"error": "Empty response from intent classifier"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        print("Response from intent_classifier", intent_response)
         information_needed = intent_response.get("information_needed")
         visual_type = intent_response.get("visual_type")
-        # Generate visual response
+
+        # Generate visual response using Gemini
         model = genai.GenerativeModel(
             model_name="gemini-1.5-flash",
             generation_config=generation_config,
@@ -864,12 +1105,16 @@ class GenerateMessageView(APIView):
 
         visual_response = visual_response_type.text
 
-       
-        sql_response = """ SELECT * FROM "frugalooAPI_financelog" WHERE user_id = 'da034663-9c37-4c0f-8f86-7f63c2ed9471'"""
+        # Placeholder SQL query (update as needed)
+        sql_response = """SELECT * FROM "frugalooAPI_financelog" WHERE user_id = 'da034663-9c37-4c0f-8f86-7f63c2ed9471'"""
+
         # Query Supabase with the SQL response
         query_result = self.execute_sql_query(sql_response)
+
         # Log the message and response asynchronously
         self.log_message_sync(user_id, message, sql_response)
+
+        # Generate insights using Gemini
         insights_model_generation_config = {
             "temperature": 0.6,
             "top_p": 0.95,
@@ -905,21 +1150,17 @@ class GenerateMessageView(APIView):
         insights_model_response_cleaned = self.extract_json_data(
             insights_model_response
         )
-        print("CLEANED INSIGHTS RESPONSE", insights_model_response_cleaned)
 
         # Parse the cleaned JSON response
         try:
             response_json = json.loads(insights_model_response_cleaned)
             insights = response_json.get("insights", "")
             extracted_data = response_json.get("extracted_data", "")
-            print("EXTRACTED DATA", extracted_data)
-            print("INSIGHTS", insights)
         except json.JSONDecodeError as e:
-            print(f"Error parsing JSON: {e}")
             insights = ""
             extracted_data = ""
 
-
+        # Generate React visual component response using Gemini
         generation_config_model3 = {
             "temperature": 0.5,
             "top_p": 0.95,
@@ -927,7 +1168,6 @@ class GenerateMessageView(APIView):
             "max_output_tokens": 8192,
         }
 
-        # Generate React Visual Component response
         model3 = genai.GenerativeModel(
             model_name="gemini-1.5-pro",
             generation_config=generation_config_model3,
@@ -944,8 +1184,6 @@ class GenerateMessageView(APIView):
         react_visual_raw = react_visual_response.text
         react_visual_component = self.extract_chart_data(react_visual_raw)
 
-        
-
         # Respond with the results
         response_data = {
             "visual_response": visual_response,
@@ -955,10 +1193,18 @@ class GenerateMessageView(APIView):
             "insights": insights,
         }
 
-        print(response_data)
         return Response(response_data, status=status.HTTP_200_OK)
 
     def extract_json_data(self, json_component_raw: str) -> str:
+        """
+        Extract JSON data from the raw response text.
+
+        Args:
+        - json_component_raw: Raw response text containing JSON data
+
+        Returns:
+        - str: Extracted JSON data as a string
+        """
         pattern = r"```json\n(.*?)\n```"
         match = re.search(pattern, json_component_raw, re.DOTALL)
 
@@ -966,11 +1212,18 @@ class GenerateMessageView(APIView):
             extracted_data = match.group(1)
             return extracted_data.strip()
 
-        # If there's no match, return the raw string (assuming it might be a valid JSON)
         return json_component_raw.strip()
 
     def extract_chart_data(self, react_component_raw: str) -> str:
-        # Updated regex pattern to capture the entire content between the backticks ```
+        """
+        Extract chart data from the raw response text.
+
+        Args:
+        - react_component_raw: Raw response text containing chart data
+
+        Returns:
+        - str: Extracted chart data as a string
+        """
         pattern = r"```jsx\n(.*?)\n```"
         match = re.search(pattern, react_component_raw, re.DOTALL)
 
@@ -981,16 +1234,31 @@ class GenerateMessageView(APIView):
         return ""
 
     def extract_sql_query(self, response_text: str) -> str:
-        """Extracts the SQL query from the response text."""
+        """
+        Extract SQL query from the response text.
+
+        Args:
+        - response_text: Raw response text containing SQL query
+
+        Returns:
+        - str: Extracted SQL query as a string
+        """
         match = re.search(r"```sql\n(.*?)\n```", response_text, re.DOTALL)
         if match:
             return match.group(1).strip()
         return ""
 
     def execute_sql_query(self, sql_query: str):
-        """Executes the SQL query using Supabase and returns the result."""
+        """
+        Execute SQL query using Supabase and return the result.
+
+        Args:
+        - sql_query: SQL query to be executed
+
+        Returns:
+        - dict: Query result or error message
+        """
         try:
-            # Use Supabase client to run the query through the execute_sql function
             result = self.supabase.rpc("execute_sql", {"query": sql_query}).execute()
             if result.data:
                 return result.data
@@ -1004,6 +1272,14 @@ class GenerateMessageView(APIView):
             return {"error": str(e)}
 
     def log_message_sync(self, user_id, question, response_text):
+        """
+        Log message and response asynchronously.
+
+        Args:
+        - user_id: ID of the user
+        - question: User's question
+        - response_text: AI-generated response text
+        """
         MessageLog.objects.create(
             user_id=user_id, question=question, sql_query=response_text
         )
