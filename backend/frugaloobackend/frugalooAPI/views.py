@@ -518,7 +518,7 @@ class GeminiSuggestions(APIView):
 
     def post(self, request):
         try:
-            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+            genai.configure(api_key=os.environ["GOOGLE_SUGGESTION_API_KEY"])
             trip_id = request.data.get("trip_id")
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
