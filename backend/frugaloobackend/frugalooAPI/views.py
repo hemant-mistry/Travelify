@@ -571,12 +571,14 @@ original_plan: It would be a JSON structure which represents the user's original
 current_day: It represents the current day the user is in. It will give you an idea of the user's trip progress.
 user_changes: It represents the changes the user wants to make in the itinerary or the suggestions they want from you.
 You need to edit the original_plan and share it as the output and also let the user know the changes/additions you made.
-Only share the original_plan with the updated data and the summary of the changes with friendly text. Your changes should be added at last of the JSON as shown in the below sample output.
+Only share the original_plan with the updated data and the summary of the changes with friendly text in minimum 20 words. Your changes should be added at last of the JSON as shown in the below sample output.
 Always generate new suggestions different from the already present locations.
 
 If the user wants to change any places in the original itinerary always pick up places from the nearby_places JSON given below. It contains all the nearby places based on the places. 
-Always pickup places near to the above place. 
-
+Always pickup places near to the above place.
+Always keep the field names/key names should the same i.e. place_name, description, TOE, lat_long and changes.
+Always give some description based on the place you selected.
+Always describe the changes made by you in the original plan in 20-30 words minimum.
 {nearby_places}
 
 ### General Structure of JSON output ###
