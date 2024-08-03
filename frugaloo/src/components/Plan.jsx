@@ -9,7 +9,7 @@ import DiscardConfirmation from "../assets/DiscardConfirmation.png";
 import animationData from "../assets/lotties/gemini.json";
 import geminiData from "../assets/lotties/gemini-logo.json";
 import Lottie from "react-lottie";
-function Plan({ loggedInUser, onLocateClick }) {
+function Plan({ loggedInUser, onLocateClick, budget }) {
   const defaultOptions = {
     loop: true,
     autoplay: true,
@@ -122,6 +122,7 @@ function Plan({ loggedInUser, onLocateClick }) {
           current_day: day,
           original_plan: planDetails,
           user_changes: userChanges,
+          budget:budget
         }
       );
 

@@ -43,7 +43,7 @@ class Preplan(APIView):
             user_id = request.data.get("user_id")
             stay_details = request.data.get("stay_details")
             number_of_days = request.data.get("number_of_days")
-            budget = 1000
+            budget = request.data.get("budget")
             additional_preferences = request.data.get("additional_preferences")
 
             api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
@@ -156,12 +156,13 @@ class GenerateFinalPlan(APIView):
                 )
         return lat_long_values
 
-    def fetch_nearby_restaurants(self, lat_long_values):
+    def fetch_nearby_restaurants(self, lat_long_values, budget):
         """
         Fetches nearby restaurants for given latitude and longitude values.
 
         Parameters:
         - lat_long_values: List of dictionaries containing lat/long values for each place
+        - budget: Budget type for filtering restaurants (1: frugal, 2: moderate, 3: expensive)
 
         Returns:
         - Dictionary containing restaurant details for each place
@@ -169,6 +170,13 @@ class GenerateFinalPlan(APIView):
         api_key = os.environ.get("GOOGLE_PLACES")
         radius = 1500
         results = {}
+
+        # The updated budget mapping for filtering restaurants
+        budget_mapping = {
+            1: {0, 1},  # Frugal: price_level 0 or 1
+            2: {2, 3},  # Moderate: price_level 2 or 3
+            3: {4},  # Expensive: price_level 4
+        }
 
         for place in lat_long_values:
             day_index = place["day_index"]
@@ -179,6 +187,8 @@ class GenerateFinalPlan(APIView):
             response = requests.get(url)
             if response.status_code == 200:
                 data = response.json()  # Parse response content as JSON
+
+                # Filter restaurants based on the budget
                 names_with_details = [
                     {
                         "name": result["name"],
@@ -188,7 +198,23 @@ class GenerateFinalPlan(APIView):
                         "price_level": result.get("price_level", "N/A"),
                     }
                     for result in data["results"]
+                    if "price_level" in result
+                    and result["price_level"] in budget_mapping[budget]
                 ]
+
+                # If no restaurants found in the preferred budget range, fetch all restaurants
+                if not names_with_details:
+                    names_with_details = [
+                        {
+                            "name": result["name"],
+                            "latitude": result["geometry"]["location"]["lat"],
+                            "longitude": result["geometry"]["location"]["lng"],
+                            "rating": result.get("rating", "N/A"),
+                            "price_level": result.get("price_level", "N/A"),
+                        }
+                        for result in data["results"]
+                    ]
+
                 if day_index not in results:
                     results[day_index] = {}
                 results[day_index][place_name] = names_with_details
@@ -204,13 +230,13 @@ class GenerateFinalPlan(APIView):
             user_id = request.data.get("user_id")
             stay_details = request.data.get("stay_details")
             number_of_days = request.data.get("number_of_days")
-            budget = 1000
+            budget = request.data.get("budget")
             additional_preferences = request.data.get("additional_preferences")
             response_raw = request.data.get("response_data")
 
             response_raw_dict = json.loads(response_raw)
             lat_long_values = self.extract_lat_long(response_raw_dict)
-            nearby_restaurants = self.fetch_nearby_restaurants(lat_long_values)
+            nearby_restaurants = self.fetch_nearby_restaurants(lat_long_values, budget)
 
             response_raw = {
                 "nearby_restaurants": nearby_restaurants,
@@ -461,60 +487,60 @@ class GeminiSuggestions(APIView):
         return lat_long_values
 
     def fetch_nearby_preferences(self, lat_long_values, preferences):
-      preferences = preferences.strip()
-      
-      api_key = os.environ.get("GOOGLE_PLACES")
-      radius = 1500
-      results = {}
-      
-      for place in lat_long_values:
-          day_index = place["day_index"]
-          place_name = place["place_name"]
-          lat_long = place["lat_long"]
-          lat, lng = lat_long.split(",")
+        preferences = preferences.strip()
 
-          url = "https://places.googleapis.com/v1/places:searchNearby"
-          headers = {
-              "X-Goog-Api-Key": api_key,
-              "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.types,places.websiteUri,places.location"
-          }
-          payload = {
-              "includedTypes": [preferences],  # Ensure preferences is correctly passed
-              "maxResultCount": 20,
-              "locationRestriction": {
-                  "circle": {
-                      "center": {"latitude": float(lat), "longitude": float(lng)},
-                      "radius": radius,
-                  }
-              },
-          }
+        api_key = os.environ.get("GOOGLE_PLACES")
+        radius = 1500
+        results = {}
 
+        for place in lat_long_values:
+            day_index = place["day_index"]
+            place_name = place["place_name"]
+            lat_long = place["lat_long"]
+            lat, lng = lat_long.split(",")
 
+            url = "https://places.googleapis.com/v1/places:searchNearby"
+            headers = {
+                "X-Goog-Api-Key": api_key,
+                "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.types,places.websiteUri,places.priceLevel,places.location",
+            }
+            payload = {
+                "includedTypes": [
+                    preferences
+                ],  # Ensure preferences is correctly passed
+                "maxResultCount": 20,
+                "locationRestriction": {
+                    "circle": {
+                        "center": {"latitude": float(lat), "longitude": float(lng)},
+                        "radius": radius,
+                    }
+                },
+            }
 
+            response = requests.post(url, headers=headers, json=payload)
 
-          response = requests.post(url, headers=headers, json=payload)
+            if response.status_code == 200:
+                data = response.json()  # Parse response content as JSON
+                places = data.get("places", [])
+                place_details = [
+                    {
+                        "display_name": place["displayName"]["text"],
+                        "formatted_address": place["formattedAddress"],
+                        "types": place["types"],
+                        "latitude": place["location"]["latitude"],
+                        "longitude": place["location"]["longitude"],
+                        "website_uri": place.get("websiteUri", "N/A"),
+                        "price_index": place.get("priceLevel", "N/A"),
+                    }
+                    for place in places
+                ]
+                if day_index not in results:
+                    results[day_index] = {}
+                results[day_index][place_name] = place_details
+            else:
+                print(f"Error: {response.status_code}, {response.text}")
 
-          if response.status_code == 200:
-              data = response.json()  # Parse response content as JSON
-              places = data.get("places", [])
-              place_details = [
-                  {
-                      "display_name": place["displayName"]["text"],
-                      "formatted_address": place["formattedAddress"],
-                      "types": place["types"],
-                      "latitude": place["location"]["latitude"],
-                      "longitude": place["location"]["longitude"],
-                      "website_uri": place.get("websiteUri", "N/A"),
-                  }
-                  for place in places
-              ]
-              if day_index not in results:
-                  results[day_index] = {}
-              results[day_index][place_name] = place_details
-          else:
-              print(f"Error: {response.status_code}, {response.text}")
-
-      return results
+        return results
 
     def post(self, request):
         try:
@@ -523,7 +549,17 @@ class GeminiSuggestions(APIView):
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
             user_changes = request.data.get("user_changes")
+            budget = request.data.get("budget")
 
+            # Budget mapping
+            if budget == 1:
+                user_budget = "Places with price_index: PRICE_LEVEL_FREE or PRICE_LEVEL_INEXPENSIVE is recommended."
+            elif budget == 2:
+                user_budget = "Places with price_index: PRICE_LEVEL_MODERATE or PRICE_LEVEL_EXPENSIVE is recommended."
+            else:
+                user_budget = "Places with price_index: PRICE_LEVEL_VERY_EXPENSIVE is recommended."
+
+            print("User budget preference", user_budget)
             # Phase 1: Calling the intent classifier to extract the places_types based on user's query.
             generation_config_places_type_extractor = {
                 "temperature": 0,
@@ -538,7 +574,7 @@ class GeminiSuggestions(APIView):
                 generation_config=generation_config_places_type_extractor,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction="You are an intelligent intent extractor. You will receive a change request from user. You have to extract the intent in the user's query and output the types mentioned below which are based on it. Basically your job is to output the type which belongs to the user's query so that that particular place could be fetched from the google maps places API.\n\nPLACES API TYPES\namusement_center\namusement_park\naquarium\nbanquet_hall\nbowling_alley\ncasino\ncommunity_center\nconvention_center\ncultural_center\ndog_park\nevent_venue\nhiking_area\nhistorical_landmark\nmarina\nmovie_rental\nmovie_theater\nnational_park\nnight_club\npark\ntourist_attraction\nvisitor_center\nwedding_venue\nzoo\namerican_restaurant\nbakery\nbar\nbarbecue_restaurant\nbrazilian_restaurant\nbreakfast_restaurant\nbrunch_restaurant\ncafe\nchinese_restaurant\ncoffee_shop\nfast_food_restaurant\nfrench_restaurant\ngreek_restaurant\nhamburger_restaurant\nice_cream_shop\nindian_restaurant\nindonesian_restaurant\nitalian_restaurant\njapanese_restaurant\nkorean_restaurant\tlebanese_restaurant\nmeal_delivery\nmeal_takeaway\nmediterranean_restaurant\nmexican_restaurant\nmiddle_eastern_restaurant\npizza_restaurant\nramen_restaurant\nrestaurant\nsandwich_shop\nseafood_restaurant\nspanish_restaurant\nsteak_house\nsushi_restaurant\nthai_restaurant\nturkish_restaurant\nvegan_restaurant\nvegetarian_restaurant\nvietnamese_restaurant\n\n\n### EXAMPLES ###\nUser: Can you add any indian resto in the trip?\nModel: italian_restaurant\n\nUser: Can you add cafe and bars to the trip?\nModel: cafe, bar\n\nUser: I want to eat some desserts could you please add in a place for eating desserts in the itinerary?\nModel: bakery\n",
+                system_instruction="You are an intelligent intent extractor. You will receive a change request from user. You have to extract the intent in the user's query and output the types mentioned below which are based on it. Basically your job is to output the type which belongs to the user's query so that that particular place could be fetched from the google maps places API.\n\nPLACES API TYPES\nchurch\nhindu_temple\nmosque\nsynagogue\nart_gallery\nmuseum\nshopping_mall\nperforming_arts_theater\namusement_center\namusement_park\nstadium\nlibrary\naquarium\nbanquet_hall\nbowling_alley\ncasino\ncommunity_center\nconvention_center\ncultural_center\ndog_park\nevent_venue\nhiking_area\nhistorical_landmark\nmarina\nmovie_rental\nmovie_theater\nnational_park\nnight_club\npark\ntourist_attraction\nvisitor_center\nwedding_venue\nzoo\namerican_restaurant\nbakery\nbar\nbarbecue_restaurant\nbrazilian_restaurant\nbreakfast_restaurant\nbrunch_restaurant\ncafe\nchinese_restaurant\ncoffee_shop\nfast_food_restaurant\nfrench_restaurant\ngreek_restaurant\nhamburger_restaurant\nice_cream_shop\nindian_restaurant\nindonesian_restaurant\nitalian_restaurant\njapanese_restaurant\nkorean_restaurant\tlebanese_restaurant\nmeal_delivery\nmeal_takeaway\nmediterranean_restaurant\nmexican_restaurant\nmiddle_eastern_restaurant\npizza_restaurant\nramen_restaurant\nrestaurant\nsandwich_shop\nseafood_restaurant\nspanish_restaurant\nsteak_house\nsushi_restaurant\nthai_restaurant\nturkish_restaurant\nvegan_restaurant\nvegetarian_restaurant\nvietnamese_restaurant\n\n\n### EXAMPLES ###\nUser: Can you add any indian resto in the trip?\nModel: italian_restaurant\n\nUser: Can you add cafe and bars to the trip?\nModel: cafe, bar\n\nUser: I want to eat some desserts could you please add in a place for eating desserts in the itinerary?\nModel: bakery\n",
             )
 
             places_type_extractor_response = places_type_extractor.generate_content(
@@ -547,7 +583,6 @@ class GeminiSuggestions(APIView):
             places_types = places_type_extractor_response.text
             trip_info = get_object_or_404(UserTripInfo, trip_id=trip_id)
             serializer = UserTripInfoSerializer(trip_info)
-            nearby_restaurants = serializer.data.get("nearby_restaurants")
             lat_long_values = self.extract_lat_long(original_plan)
             nearby_places = self.fetch_nearby_preferences(lat_long_values, places_types)
             print("Fetched nearby places", nearby_places)
@@ -571,14 +606,19 @@ original_plan: It would be a JSON structure which represents the user's original
 current_day: It represents the current day the user is in. It will give you an idea of the user's trip progress.
 user_changes: It represents the changes the user wants to make in the itinerary or the suggestions they want from you.
 You need to edit the original_plan and share it as the output and also let the user know the changes/additions you made.
+You might need to reorder the places in a particular day based on the Best time to visit it. It should always be in the following order:
+Morning activity -> Afternoon activity -> Evening activity -> Night activity.
+Always reorder the places so that the nearby places are below each other. For example, if Crescent Mall is near Qutub Minar then it should come below Qutub Minar in the generated JSON.
 Only share the original_plan with the updated data and the summary of the changes with friendly text in minimum 20 words. Your changes should be added at last of the JSON as shown in the below sample output.
 Always generate new suggestions different from the already present locations.
-
+Unless the user explicitly mentions any new budget preferences always try to recommend places that lies in the user's budget: {user_budget}. 
 If the user wants to change any places in the original itinerary always pick up places from the nearby_places JSON given below. It contains all the nearby places based on the places. 
 Always pickup places near to the above place.
 Always keep the field names/key names should the same i.e. place_name, description, TOE, lat_long and changes.
 Always give some description based on the place you selected.
 Always describe the changes made by you in the original plan in 20-30 words minimum.
+Always make sure all the key and values in the JSON structure are enclosed in double quotes ("").
+
 {nearby_places}
 
 ### General Structure of JSON output ###
@@ -935,10 +975,20 @@ SAMPLE_OUTPUT 2:
 
 Always remember to open and close the curly brackets accurately, the JSON should be a valid one. Always make sure that the common mistakes are not happening while constructing the output JSON.
 ### COMMON MISTAKES
+
+### Common mistake 1
 Error fetching the original plan SyntaxError: Expected double-quoted property name in JSON at position 1112 (line 1 column 1113)
     at JSON.parse (<anonymous>)
 
+### Common mistake 2
+{{"generated_plan": {{"0": [{{"place_name": "Red Fort", "description": "A historic fort complex, a UNESCO World Heritage site. Best time to visit: Morning ", "TOE": "3 hours", "lat_long": "28.6562, 77.2410"}}, {{"place_name": "Chandani Chawk", "description": "Chandani Chawk is a bustling and historic market area. It's a great place to experience the local culture and shop for a variety of items.", "TOE": "2 hours", "lat_long": "28.656181399999998, 77.23070729999999"}}, {{"place_name": "Al-Haj Bakery", "description": "It's a bakery in Chandni Chowk serving delicious desserts at low prices.", "TOE": "1 hour", "lat_long": "28.6537943, 77.22621769999999"}}, {{"place_name": "Humayun's Tomb", "description": 'A magnificent Mughal-era mausoleum. Best time to visit: Afternoon', "TOE": "2 hours", "lat_long": "28.5931, 77.2506"}}, {{"place_name": "India Gate", "description": 'A war memorial and popular gathering spot. Best time to visit: Evening', "TOE": "1.5 hours", "lat_long": "28.6129, 77.2295"}}, {{"restaurant_name": "Cafe Lota", "description": "Cafe Lota is a charming cafe located within the National Crafts Museum. It's known for its delicious Indian cuisine, particularly its thalis, and its peaceful ambiance.", "TOE": "1.5 hours", "lat_long": "28.6134591, 77.2425038"}}, {{"restaurant_name": "Suvidha", "description": "A restaurant serving Indian and Chinese cuisines.", "TOE": "3 hours", "lat_long": "28.64423709999999, 77.2399054"}}], "1": [{{"place_name": "Qutub Minar", "description": 'A towering minaret, another UNESCO World Heritage site. Best time to visit: Morning', "TOE": "2 hours", "lat_long": "28.5244, 77.1855"}}, {{"place_name": "Crescent Mall", "description": "Crescent Mall is a shopping mall located in Lado Sarai, close to Qutub Minar. You can enjoy shopping for a variety of items here.", "TOE": "2 hours", "lat_long": "28.524841, 77.190518"}}, {{"place_name": "Gallery Pioneer", "description": 'A well-regarded art gallery in Delhi known for showcasing contemporary Indian art. Best time to visit: Afternoon', "TOE": "2 hours", "lat_long": "28.5238457, 77.19365479999999"}},{{"place_name": "Lotus Temple", "description": 'A modern architectural marvel in the shape of a lotus flower. Best time to visit: Afternoon', "TOE": "1.5 hours", "lat_long": "28.5535, 77.2588"}}, {{"place_name": "Dilli Haat", "description": 'A vibrant open-air market for handicrafts and food. Best time to visit: Evening', "TOE": "2.5 hours", "lat_long": "28.5722, 77.2206"}}, {{"restaurant_name": "Dramz Delhi", "description": "A high-end bar and restaurant offering modern Indian and international cuisines.", "TOE": "2 hours", "lat_long": "28.5243996, 77.1836545"}}, {{"restaurant_name": "Slice Of Italy", "description": "A restaurant serving Italian dishes.", "TOE": "2.5 hours", "lat_long": "28.581887, 77.227008"}}], "2": [{{"place_name": "Jama Masjid", "description": "One of India's largest mosques. Best time to visit: Morning", "TOE": "2 hours", "lat_long": "28.6507, 77.2334"}}, {{"place_name": "Chandni Chowk", "description": 'A bustling and historic market area. Best time to visit: Afternoon', "TOE": "3 hours", "lat_long": "28.6586, 77.2247"}}, {{"place_name": "Raj Ghat", "description": 'A memorial to Mahatma Gandhi. Best time to visit: Evening', "TOE": "1 hour", "lat_long": "28.6419, 77.2504"}}, {{"restaurant_name": "Jung Bahadur Kachori Wala", "description": "A street food stall known for its kachoris.", "TOE": "3 hours", "lat_long": "28.6556903, 77.2300195"}}, {{"restaurant_name": "Zaika Foods", "description": "A restaurant serving Indian cuisine.", "TOE": "1 hour", "lat_long": "28.6437281, 77.24029279999999"}}, {{"restaurant_name": "Suvidha", "description": "A restaurant serving Indian and Chinese cuisines.", "TOE": "2 hours", "lat_long": "28.64423709999999, 77.2399054"}}, {{"place_name": "Al-Haj Bakery", "description": "It's a bakery in Chandni Chowk serving delicious desserts at low prices.", "TOE": "1 hour", "lat_long": "28.6537943, 77.22621769999999"}}], "3": [{{"place_name": "Akshay Patra Temple", "description": 'A beautiful temple dedicated to Lord Krishna. Best time to visit: Morning', "TOE": "2 hours", "lat_long": "28.6139, 77.2090"}}, {{"place_name": "Garden of Five Senses", "description": 'A serene and picturesque garden. Best time to visit: Afternoon', "TOE": "2.5 hours", "lat_long": "28.5550, 77.1926"}}, {{"place_name": "Connaught Place", "description": 'A central shopping and dining district. Best time to visit: Evening', "TOE": "2 hours", "lat_long": "28.6333, 77.2167"}},{{"restaurant_name": "Mizo Diner", "description": "A restaurant serving Mizo cuisine.", "TOE": "2.5 hours", "lat_long": "28.5617682, 77.19256349999999"}},{{"restaurant_name": "Le Belvedere - Le Meridien", "description": "A fine dining restaurant offering European cuisine.", "TOE": "2 hours", "lat_long": "28.6187522, 77.2179598"}}, {{"restaurant_name": "The Imperial New Delhi", "description": "A historic hotel offering fine dining experiences.", "TOE": "2 hours", "lat_long": "28.62501779999999, 77.21822759999999"}}]}}, "changes": "I've added Al-Haj Bakery to your Day 3 itinerary after dinner as per your request. Enjoy some delicious desserts!"}}
+
+In the above JSON you forgort to enclose the  'A magnificent Mughal-era mausoleum. Best time to visit: Afternoon' in double quotes. The correct JSON would be
+"A magnificent Mughal-era mausoleum. Best time to visit: Afternoon"
+
 """,
+
+
             )
 
             chat_session = model.start_chat(history=[])
@@ -947,7 +997,8 @@ Error fetching the original plan SyntaxError: Expected double-quoted property na
 
             response = chat_session.send_message(concatenated_input)
             response_data = response.text
-
+            print("###################    OVERALL PLAN  ###################")
+            print(response_data)
             response = {
                 "user_changes": user_changes,
                 "current_day": current_day,

@@ -22,7 +22,7 @@ function App() {
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState(null);
-
+  const [budget, setBudget] = useState(2);
   useEffect(() => {
     async function fetchSession() {
       const {
@@ -73,9 +73,9 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/planinput"
-            element={<PlanInput loggedInUser={loggedInUser} />}
+            element={<PlanInput loggedInUser={loggedInUser} budget={budget} setBudget = {setBudget}/>}
           />
-          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser} onLocateClick={setSelectedDayData}/>} />
+          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser} budget={budget} onLocateClick={setSelectedDayData} />} />
           <Route
             path="/PromptInput"
             element={<PromptInput loggedInUser={loggedInUser} />}

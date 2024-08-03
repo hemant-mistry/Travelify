@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Lottie from "react-lottie";
 import animationData from "../assets/lotties/globe.json";
 
-function PlanInput({ loggedInUser }) {
+function PlanInput({ loggedInUser, budget, setBudget }) {
   const defaultOptions = {
     loop: true,
     autoplay: true,
@@ -23,7 +23,6 @@ function PlanInput({ loggedInUser }) {
   });
   const [stayDetails, setStayDetails] = useState("");
   const [numberOfDays, setNumberOfDays] = useState(0);
-  const [budget, setBudget] = useState("");
   const [preferences, setPreferences] = useState({
     Landmarks: false,
     RooftopBars: false,
@@ -74,6 +73,17 @@ function PlanInput({ loggedInUser }) {
       ...prev,
       [name]: checked,
     }));
+  };
+
+  const handleBudgetChange = (event) => {
+    const value = event.target.value;
+    let budgetLabel = 1;
+    if (value > 0 && value <= 50) {
+      budgetLabel = 2;
+    } else if (value > 50) {
+      budgetLabel = 3;
+    }
+    setBudget(budgetLabel);
   };
 
   const handleSubmit = async () => {
@@ -193,6 +203,7 @@ function PlanInput({ loggedInUser }) {
                   max="100"
                   className="range range-sm mt-5"
                   step="50"
+                  onChange={handleBudgetChange}
                 />
                 <div className="flex w-full justify-between px-2 text-xs md:text-sm mt-3">
                   <span>Frugal</span>
