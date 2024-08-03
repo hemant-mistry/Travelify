@@ -65,7 +65,7 @@ class Preplan(APIView):
                     })
             
             print("Tourist attractions", tourist_attractions)
-            api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
+            api_key = os.getenv("GOOGLE_PRE_PLAN_API_KEY")
             if not api_key:
                 return Response(
                     {"error": "API key is missing"},
@@ -263,7 +263,7 @@ class GenerateFinalPlan(APIView):
                 "response_data": response_raw_dict,
             }
 
-            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+            genai.configure(api_key=os.environ["GOOGLE_GENERATE_PLAN_API_KEY"])
             generation_config = {
                 "temperature": 0.5,
                 "top_p": 0.95,
@@ -564,13 +564,13 @@ class GeminiSuggestions(APIView):
 
     def post(self, request):
         try:
-            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
+            genai.configure(api_key=os.environ["GOOGLE_SUGGESTION_API_KEY"])
             trip_id = request.data.get("trip_id")
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
             user_changes = request.data.get("user_changes")
             budget = request.data.get("budget")
-
+            print("budgett",budget)
             # Budget mapping
             if budget == 1:
                 user_budget = "Places with price_index: PRICE_LEVEL_FREE or PRICE_LEVEL_INEXPENSIVE is recommended."
@@ -1133,7 +1133,7 @@ class GenerateMessageView(APIView):
     def post(self, request):
         user_id = request.data.get("user_id")
         message = request.data.get("message")
-
+        print("UserId", user_id)
         # Configure the genai API
         genai.configure(api_key=os.environ["GOOGLE_FINANCE_API_KEY"])
 
@@ -1190,7 +1190,8 @@ class GenerateMessageView(APIView):
         visual_response = visual_response_type.text
 
         # Placeholder SQL query (update as needed)
-        sql_response = """SELECT * FROM "frugalooAPI_financelog" WHERE user_id = 'da034663-9c37-4c0f-8f86-7f63c2ed9471'"""
+        sql_response = f"""SELECT * FROM "frugalooAPI_financelog" WHERE user_id = '{user_id}'
+        """
 
         # Query Supabase with the SQL response
         query_result = self.execute_sql_query(sql_response)
@@ -1343,12 +1344,26 @@ class GenerateMessageView(APIView):
         - dict: Query result or error message
         """
         try:
+            # Execute the RPC function
             result = self.supabase.rpc("execute_sql", {"query": sql_query}).execute()
-            if result.data:
+
+            # Print the result for debugging
+            print("Supabase result:", result)
+
+            # Check if result contains errors or data
+            if hasattr(result, "error"):
+                return {"error": result.error}
+
+            if hasattr(result, "data") and result.data:
                 return result.data
             else:
-                return {"error": result.error_message}
-        except RecursionError as e:
+                # If there's no specific error, print out the result object
+                print("Unexpected result structure:", result)
+                return {
+                    "error": "Query execution failed without a specific error message."
+                }
+
+        except RecursionError:
             return {
                 "error": "A recursion error occurred. Please check the input and try again."
             }
