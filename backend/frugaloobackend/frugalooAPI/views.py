@@ -45,7 +45,26 @@ class Preplan(APIView):
             number_of_days = request.data.get("number_of_days")
             budget = request.data.get("budget")
             additional_preferences = request.data.get("additional_preferences")
+            places_api_key = os.environ.get("GOOGLE_PLACES")
+            places_url = f"https://maps.googleapis.com/maps/api/place/textsearch/json?query={stay_details}&key={places_api_key}&type=tourist_attraction"
+            places_response = requests.get(places_url)
+            places_data = places_response.json()
 
+            tourist_attractions = []
+            for result in places_data.get("results", []):
+                place_name = result.get("name")
+                location = result.get("geometry", {}).get("location", {})
+                lat = location.get("lat")
+                lng = location.get("lng")
+
+                if place_name and lat and lng:
+                    tourist_attractions.append({
+                        "name": place_name,
+                        "latitude": lat,
+                        "longitude": lng
+                    })
+            
+            print("Tourist attractions", tourist_attractions)
             api_key = os.getenv("GOOGLE_GEMINI_API_KEY")
             if not api_key:
                 return Response(
@@ -68,7 +87,7 @@ class Preplan(APIView):
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction='### TASK DESCRIPTION ###\nGenerate an itinerary based on the provided user information. Each day in the itinerary should contain a minimum of three mandatory activities and all the activities should be near each other with the travelling time less than 2 hours. In addition to the mandatory activities, you may recommend an Exploration/Shopping activity if the user\'s day has sufficient bandwidth. This estimation can be made based on the "Time of Exploration" (TOE) for the mandatory activities.\n\nEnsure that the user visits unique places each day, without repeating any places throughout the itinerary. If the number of days is more than the number of unique places, recommend some additional activities and adventures, but do not repeat places.\n\nThe itinerary should always start the day with a morning activity, followed by an afternoon activity, and end the day with an evening activity.\n\n### USER INPUT FORMAT ###\nThe user will provide the following input:\n\nstay_details\nnumber_of_days\nbudget\nadditional_preferences\n\n### OUTPUT FORMAT ###\nThe output should be a JSON structure formatted as follows:\n\n{\n  "1": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ],\n  "3": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ]\n}\n\n\n### GUIDELINES ###\n\nUnique Places: Ensure all places in the itinerary are unique across all days.\nStructured Schedule: Each day starts with a morning activity, followed by an afternoon activity, and ends with an evening activity.\nExploration/Shopping Activity: Include an additional Exploration/Shopping activity if time permits, based on the TOE of mandatory activities.\nJSON Structure: Ensure the JSON output is correctly structured with no repeated places.\n\n### EXAMPLE OUTPUT CONTAINING DUPLICATE ###\n{\n  "1": [\n    {\n      "place_name": "Central Park",\n      "description": "A large public park in New York City. Best time to visit: Morning",\n      "TOE": "2 hours",\n      "lat_long": "40.785091,-73.968285"\n    },\n    {\n      "place_name": "Metropolitan Museum of Art",\n      "description": "One of the world\'s largest and finest art museums. Best time to visit: Afternoon",\n      "TOE": "2.5 hours",\n      "lat_long": "40.779437,-73.963244"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Brooklyn Bridge",\n      "description": "A hybrid cable-stayed/suspension bridge. Best time to visit: Morning",\n      "TOE": "1.5 hours",\n      "lat_long": "40.706086,-73.996864"\n    },\n    {\n      "place_name": "Statue of Liberty",\n      "description": "A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon",\n      "TOE": "3 hours",\n      "lat_long": "40.689247,-74.044502"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n\n  ]\n}\n\nIn the above JSON we can see that the place_name "Time Square" is repeated in the day 2 as well even after the user visited that place in day 1.\nSo in such cases you\'ll need to suggest another place instead of it.\n\n### EXAMPLE CORRECT OUTPUT ###\n{\n  "1": [\n    {\n      "place_name": "Central Park",\n      "description": "A large public park in New York City. Best time to visit: Morning",\n      "TOE": "2 hours",\n      "lat_long": "40.785091,-73.968285"\n    },\n    {\n      "place_name": "Metropolitan Museum of Art",\n      "description": "One of the world\'s largest and finest art museums. Best time to visit: Afternoon",\n      "TOE": "2.5 hours",\n      "lat_long": "40.779437,-73.963244"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Brooklyn Bridge",\n      "description": "A hybrid cable-stayed/suspension bridge. Best time to visit: Morning",\n      "TOE": "1.5 hours",\n      "lat_long": "40.706086,-73.996864"\n    },\n    {\n      "place_name": "Statue of Liberty",\n      "description": "A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon",\n      "TOE": "3 hours",\n      "lat_long": "40.689247,-74.044502"\n    },\n    {\n      "place_name": "Broadway Show",\n      "description": "A popular location for theater performances. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.759012,-73.984474"\n    }\n\n  ]\n}\n\n\n### IMPORTANT ###\n\nEnsure all places in the itinerary are unique.\nStructure each day with a morning, afternoon, and evening activity.\nInclude additional Exploration/Shopping activities if time permits, based on the TOE.',
+                system_instruction="### TASK DESCRIPTION ###\nGenerate an itinerary based on the provided user information. Each day in the itinerary should contain a minimum of three mandatory activities and all the activities should be near each other with the travelling time less than 2 hours. In addition to the mandatory activities, you may recommend an Exploration/Shopping activity if the user's day has sufficient bandwidth. This estimation can be made based on the \"Time of Exploration\" (TOE) for the mandatory activities.\n\nEnsure that the user visits unique places each day, without repeating any places throughout the itinerary. If the number of days is more than the number of unique places, recommend some additional activities and adventures, but do not repeat places.\n\nThe itinerary should always start the day with a morning activity, followed by an afternoon activity, and end the day with an evening activity.\n\nAlways pickup from the tourist attraction array provided below, once all the locations are used then you can recommend places from your knowledge base.\n tourist_attractions \n\n\n \n\n### USER INPUT FORMAT ###\nThe user will provide the following input:\n\nstay_details\nnumber_of_days\nbudget\nadditional_preferences\n\n### OUTPUT FORMAT ###\nThe output should be a JSON structure formatted as follows:\n\n{\n  \"1\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ],\n  \"3\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ]\n}\n\n\n### GUIDELINES ###\n\nUnique Places: Ensure all places in the itinerary are unique across all days.\nStructured Schedule: Each day starts with a morning activity, followed by an afternoon activity, and ends with an evening activity.\nExploration/Shopping Activity: Include an additional Exploration/Shopping activity if time permits, based on the TOE of mandatory activities.\nJSON Structure: Ensure the JSON output is correctly structured with no repeated places.\n\n### EXAMPLE OUTPUT CONTAINING DUPLICATE ###\n{\n  \"1\": [\n    {\n      \"place_name\": \"Central Park\",\n      \"description\": \"A large public park in New York City. Best time to visit: Morning\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.785091,-73.968285\"\n    },\n    {\n      \"place_name\": \"Metropolitan Museum of Art\",\n      \"description\": \"One of the world's largest and finest art museums. Best time to visit: Afternoon\",\n      \"TOE\": \"2.5 hours\",\n      \"lat_long\": \"40.779437,-73.963244\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Brooklyn Bridge\",\n      \"description\": \"A hybrid cable-stayed/suspension bridge. Best time to visit: Morning\",\n      \"TOE\": \"1.5 hours\",\n      \"lat_long\": \"40.706086,-73.996864\"\n    },\n    {\n      \"place_name\": \"Statue of Liberty\",\n      \"description\": \"A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon\",\n      \"TOE\": \"3 hours\",\n      \"lat_long\": \"40.689247,-74.044502\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n\n  ]\n}\n\nIn the above JSON we can see that the place_name \"Time Square\" is repeated in the day 2 as well even after the user visited that place in day 1.\nSo in such cases you'll need to suggest another place instead of it.\n\n### EXAMPLE CORRECT OUTPUT ###\n{\n  \"1\": [\n    {\n      \"place_name\": \"Central Park\",\n      \"description\": \"A large public park in New York City. Best time to visit: Morning\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.785091,-73.968285\"\n    },\n    {\n      \"place_name\": \"Metropolitan Museum of Art\",\n      \"description\": \"One of the world's largest and finest art museums. Best time to visit: Afternoon\",\n      \"TOE\": \"2.5 hours\",\n      \"lat_long\": \"40.779437,-73.963244\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Brooklyn Bridge\",\n      \"description\": \"A hybrid cable-stayed/suspension bridge. Best time to visit: Morning\",\n      \"TOE\": \"1.5 hours\",\n      \"lat_long\": \"40.706086,-73.996864\"\n    },\n    {\n      \"place_name\": \"Statue of Liberty\",\n      \"description\": \"A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon\",\n      \"TOE\": \"3 hours\",\n      \"lat_long\": \"40.689247,-74.044502\"\n    },\n    {\n      \"place_name\": \"Broadway Show\",\n      \"description\": \"A popular location for theater performances. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.759012,-73.984474\"\n    }\n\n  ]\n}\n\n\n### IMPORTANT ###\n\nEnsure all places in the itinerary are unique.\nStructure each day with a morning, afternoon, and evening activity.\nInclude additional Exploration/Shopping activities if time permits, based on the TOE.",
             )
 
             chat_session = model.start_chat(history=[])
@@ -246,7 +265,7 @@ class GenerateFinalPlan(APIView):
 
             genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
             generation_config = {
-                "temperature": 1,
+                "temperature": 0.5,
                 "top_p": 0.95,
                 "top_k": 64,
                 "max_output_tokens": 8192,
@@ -545,7 +564,7 @@ class GeminiSuggestions(APIView):
 
     def post(self, request):
         try:
-            genai.configure(api_key=os.environ["GOOGLE_SUGGESTION_API_KEY"])
+            genai.configure(api_key=os.environ["GOOGLE_GEMINI_API_KEY"])
             trip_id = request.data.get("trip_id")
             current_day = request.data.get("current_day")
             original_plan = request.data.get("original_plan")
@@ -596,7 +615,7 @@ class GeminiSuggestions(APIView):
                 "response_mime_type": "application/json",
             }
 
-            model = genai.GenerativeModel(
+            model_2 = genai.GenerativeModel(
                 model_name="gemini-1.5-pro",
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
@@ -613,12 +632,23 @@ Always reorder the places so that the nearby places are below each other. For ex
 Only share the original_plan with the updated data and the summary of the changes with friendly text in minimum 20 words. Your changes should be added at last of the JSON as shown in the below sample output.
 Always generate new suggestions different from the already present locations.
 Unless the user explicitly mentions any new budget preferences always try to recommend places that lies in the user's budget: {user_budget}. 
-If the user wants to change any places in the original itinerary always pick up places from the nearby_places JSON given below. It contains all the nearby places based on the places. 
-Always pickup places near to the above place.
-Always keep the field names/key names should the same i.e. place_name, description, TOE, lat_long and changes.
-Always give some description based on the place you selected.
-Always describe the changes made by you in the original plan in 20-30 words minimum.
-Always make sure all the key and values in the JSON structure are enclosed in double quotes ("").
+When a user requests modifications to an existing itinerary, utilize the provided nearby_places JSON to suggest alternative locations. Prioritize selecting places from within the nearby_places data.\n
+
+Adhere to the following itinerary structure:\n
+
+Each place should be immediately followed by a restaurant.\n
+Maintain the original order of places unless explicitly specified by the user.\n
+Example:\n\n
+
+Original itinerary: Place A, Restaurant X, Place B, Restaurant Y\n
+User request: Replace Place A with something nearby\n
+Possible new itinerary: Place C (from nearby_places), Restaurant Z (new suggestion), Place B, Restaurant Y\n
+
+Always pickup places near to the above place.\n
+Always keep the field names/key names should the same i.e. place_name, description, TOE, lat_long and changes.\n
+Always give some description based on the place you selected.\n
+Always describe the changes made by you in the original plan in 20-30 words minimum.\n
+Always make sure all the key and values in the JSON structure are enclosed in double quotes ("").\n
 
 {nearby_places}
 
@@ -992,7 +1022,7 @@ In the above JSON you forgort to enclose the  'A magnificent Mughal-era mausoleu
 
             )
 
-            chat_session = model.start_chat(history=[])
+            chat_session = model_2.start_chat(history=[])
 
             concatenated_input = f"Original Details: {original_plan}\nCurrent day: {current_day}\Changes/Problems the user is currently facing with the original plan: {user_changes}\n"
 
@@ -1068,7 +1098,7 @@ class AddFinanceLog(APIView):
     - trip_id: ID of the trip
     - amount: Amount of the financial entry
     - description: Description of the financial entry
-
+    - trip_place: Place where the user visited
     Returns:
     - Response: Serialized financial log entry data or an error message
     """
