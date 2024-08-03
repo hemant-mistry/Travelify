@@ -202,7 +202,7 @@ class GenerateFinalPlan(APIView):
                     and result["price_level"] in budget_mapping[budget]
                 ]
 
-                # If no restaurants found in the preferred budget range, fetch all restaurants
+                 # If no restaurants found in the preferred budget range, fetch restaurants with price_level N/A
                 if not names_with_details:
                     names_with_details = [
                         {
@@ -213,6 +213,7 @@ class GenerateFinalPlan(APIView):
                             "price_level": result.get("price_level", "N/A"),
                         }
                         for result in data["results"]
+                        if result.get("price_level") is None
                     ]
 
                 if day_index not in results:
