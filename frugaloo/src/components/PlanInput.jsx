@@ -49,7 +49,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
     if (loading && loadingMessageIndex < loadingMessages.length - 1) {
       timer = setInterval(() => {
         setLoadingMessageIndex((prevIndex) => prevIndex + 1);
-      }, 1000); // Change message every 2 seconds
+      }, 1000); // Change message every 1 second
     }
 
     return () => {
@@ -201,6 +201,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
                   type="range"
                   min={0}
                   max="100"
+                  value={(budget - 1) * 50}
                   className="range range-sm mt-5"
                   step="50"
                   onChange={handleBudgetChange}
