@@ -18,16 +18,16 @@ function Home() {
     <>
       {/* Travelify Hero Section */}
       <div className="hero min-h-screen">
-        <div className="flex flex-col md:flex-row items-center justify-between w-full pt-10 md:pt-0">
+        <div className="flex flex-col md:flex-row items-center justify-between w-full pt-10 md:pt-0 md:pl-10">
           <div className="hero-content flex flex-col items-center md:items-start text-center max-w-lg md:w-1/2">
-            <h1 className="mb-5 text-5xl font-bold text-white text-center md:text-left">
+            <h1 className="mb-5 text-5xl font-bold text-white text-center md:text-left md:ml-10">
               Welcome to <br /> Travelify
             </h1>
             <p className="text-white text-center mb-5 md:text-left md:mb-5 md:ml-10">
               Travel planning just got a whole lot exciting!
             </p>
             <button
-              className="flex items-center justify-center px-14 py-3 gap-2 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-900 rounded-lg text-white rounded-[15px] md:self-start md:ml-[105px]"
+              className="flex items-center justify-center px-14 py-3 gap-2 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-900 rounded-lg text-white rounded-[15px] md:self-start md:ml-10"
               onClick={handleGetStartedClick}
             >
               Get Started
