@@ -1,8 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import helpicon from "../assets/helpicon.png";
 import loginIcon from "../assets/loginIcon.png";
-import { createClient } from "@supabase/supabase-js";
 import VideoWalkThrough from "../assets/VideoWalkThroughIcon.png";
 import addIcon from "../assets/addIcon.png";
 import { useNavigate } from "react-router-dom";
@@ -12,12 +12,10 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s"
 );
 
-// eslint-disable-next-line react/prop-types
 function Navbar({ loggedInUser }) {
-  const navigate = useNavigate();
-  
-  // Destructure loggedInUser
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
   const handleAvatarClick = () => {
     setDropdownOpen(!dropdownOpen);
@@ -32,9 +30,28 @@ function Navbar({ loggedInUser }) {
     navigate("/planinput");
   };
 
+  const handleScroll = () => {
+    if (window.scrollY > 0) {
+      setScrolled(true);
+    } else {
+      setScrolled(false);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
     <>
-      <div className="navbar rounded-md">
+      <div
+        className={`navbar rounded-md fixed w-full transition-all duration-300 ease-in-out ${
+          scrolled ? 'bg-black z-50' : ''
+        }`}
+      >
         <div className="flex-1">
           <Link to="/" className="btn btn-ghost text-xl">
             Travelify
@@ -59,17 +76,17 @@ function Navbar({ loggedInUser }) {
               className="btn btn-ghost mr-2"
               onClick={() => document.getElementById("my_modal_4").showModal()}
             >
-              <img src={VideoWalkThrough} alt="Help Icon" className="h-6 w-6" />
+              <img src={VideoWalkThrough} alt="Video Walkthrough" className="h-6 w-6" />
             </button>
           </div>
 
-          {!loggedInUser && ( // Show login button if not logged in
+          {!loggedInUser && (
             <Link to="/login" className="btn btn-ghost btn-md">
               <img src={loginIcon} alt="Login Icon" className="h-6 w-6" />
               Login/SignUp
             </Link>
           )}
-          {loggedInUser && ( // Show avatar if logged in
+          {loggedInUser && (
             <div
               className="video-walkthrough tooltip tooltip-bottom"
               data-tip="Profile"
@@ -136,6 +153,7 @@ function Navbar({ loggedInUser }) {
           </div>
         </div>
       </dialog>
+      
     </>
   );
 }

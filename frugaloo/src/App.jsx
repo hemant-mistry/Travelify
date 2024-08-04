@@ -11,6 +11,7 @@ import PromptInput from "./components/PromptInput";
 import Trip from "./components/Trips";
 import Finance from "./components/Finance";
 import Locate from "./components/Locate";
+import HeroImage from "./assets/FrameBackground.png"; // Import the background image
 
 const supabase = createClient(
   "https://wqbvxqxuiwhmretkcjaw.supabase.co",
@@ -23,6 +24,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState(null);
   const [budget, setBudget] = useState(2);
+
   useEffect(() => {
     async function fetchSession() {
       const {
@@ -65,7 +67,12 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div>
+      <div
+        className="min-h-screen bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${HeroImage})`, // Apply background image
+        }}
+      >
         <Navbar loggedInUser={loggedInUser} />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -73,24 +80,36 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/planinput"
-            element={<PlanInput loggedInUser={loggedInUser} budget={budget} setBudget = {setBudget}/>}
+            element={
+              <PlanInput
+                loggedInUser={loggedInUser}
+                budget={budget}
+                setBudget={setBudget}
+              />
+            }
           />
-          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser} budget={budget} onLocateClick={setSelectedDayData} />} />
+          <Route
+            path="/plan/:tripId"
+            element={
+              <Plan
+                loggedInUser={loggedInUser}
+                budget={budget}
+                onLocateClick={setSelectedDayData}
+              />
+            }
+          />
           <Route
             path="/PromptInput"
             element={<PromptInput loggedInUser={loggedInUser} />}
           />
-          <Route
-            path="/mytrips"
-            element={<Trip loggedInUser={loggedInUser} />}
-          />
+          <Route path="/mytrips" element={<Trip loggedInUser={loggedInUser} />} />
           <Route
             path="/myfinances"
             element={<Finance loggedInUser={loggedInUser} />}
           />
           <Route
             path="/locate/:tripId/:dayId"
-            element={<Locate loggedInUser={loggedInUser} dayData={selectedDayData}/>}
+            element={<Locate loggedInUser={loggedInUser} dayData={selectedDayData} />}
           />
         </Routes>
       </div>

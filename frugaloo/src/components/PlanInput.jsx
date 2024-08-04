@@ -145,9 +145,9 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
           {loadingMessages[loadingMessageIndex]}
         </div>
       ) : (
-        <div className="mt">
+        <div className="pt-[70px]">
           <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
-            Tell us more about your <span className="text-primary">trip..</span>
+            Tell us more about your <span className="text-custom-blue">trip..</span>
           </div>
           <div className="pl-4 pr-6 pt-2 md:pl-6">
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt amet
@@ -214,31 +214,6 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
               </label>
             </div>
             <br />
-            <div>
-              <div className="label">
-                <span className="label-text text-sm md:text-sm text-white">
-                  Let us know if you got any additional preferences :
-                </span>
-              </div>
-              <div className="flex flex-wrap md:flex-nowrap gap-10 mt-5">
-                {Object.keys(preferences).map((preference) => (
-                  <div key={preference} className="flex whitespace-nowrap">
-                    <div>
-                      <input
-                        type="checkbox"
-                        name={preference}
-                        checked={preferences[preference]}
-                        onChange={handlePreferencesChange}
-                        className="checkbox"
-                      />
-                    </div>
-                    <div className="ml-2">
-                      {preference.split(/(?=[A-Z])/).join(" ")}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
             <div className="divider"></div>
             <button
               onClick={handleSubmit}
