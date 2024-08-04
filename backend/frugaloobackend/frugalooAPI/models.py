@@ -28,6 +28,7 @@ class FinanceLog(models.Model):
     place = models.CharField(max_length=255)
     category = models.CharField(max_length=255)
     day = models.IntegerField()
+    trip_location = models.CharField(max_length=255, default="")
 
 
 class MessageLog(models.Model):

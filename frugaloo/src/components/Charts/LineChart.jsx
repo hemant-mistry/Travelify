@@ -21,11 +21,17 @@ ChartJS.register(
   Legend
 );
 
+const truncateLabel = (label, maxLength = 20) => {
+  return label.length > maxLength ? `${label.slice(0, maxLength)}...` : label;
+};
+
+
 const LineChart = ({ data, component_code }) => {
   let chartData = {};
 
     try {
       const generateChartData = new Function('data', `
+        const truncateLabel = ${truncateLabel.toString()};
         return {
           ${component_code}
         };

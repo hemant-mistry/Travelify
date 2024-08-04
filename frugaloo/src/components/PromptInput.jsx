@@ -10,7 +10,6 @@ import AreaChart from "./Charts/AreaChart";
 import BarChart from "./Charts/BarChart";
 
 function PromptInput({ loggedInUser }) {
-  console.log(loggedInUser);
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
   const [message, setMessage] = useState("");
@@ -28,51 +27,82 @@ function PromptInput({ loggedInUser }) {
     adjustHeight();
   }, [message]);
 
+
+  useEffect(() => {
+    // Clear chat history on component mount
+    sessionStorage.removeItem("chat_history");
+  }, []);
+
   const initializeChatHistory = () => {
-    const chatHistory =
-      JSON.parse(sessionStorage.getItem("chat_history")) || [];
+    const chatHistory = JSON.parse(sessionStorage.getItem("chat_history")) || {
+      contents: [
+        { "role": "user", "parts": [] },
+        { "role": "model", "parts": [] }
+      ]
+    };
     sessionStorage.setItem("chat_history", JSON.stringify(chatHistory));
   };
-
-  const updateChatHistory = (message) => {
-    const chatHistory =
-      JSON.parse(sessionStorage.getItem("chat_history")) || [];
-    chatHistory.push(message);
+  const updateChatHistory = (message, role) => {
+    // Get the current chat history or initialize an empty array
+    const chatHistory = JSON.parse(sessionStorage.getItem("chat_history")) || {
+      contents: [
+        { role: "user", "parts": [] },
+        { role: "model", "parts": [] }
+      ]
+    };
+  
+    console.log("Before Update:", chatHistory);
+  
+    // Add the new message to the appropriate role
+    const roleIndex = chatHistory.contents.findIndex(
+      (entry) => entry.role === role
+    );
+  
+    if (roleIndex !== -1) {
+      chatHistory.contents[roleIndex].parts.push({ text: message });
+    }
+  
+    console.log("After Update:", chatHistory);
+  
     sessionStorage.setItem("chat_history", JSON.stringify(chatHistory));
   };
-
   const handleSendMessage = async () => {
-    if (message.trim() === "") {
+    if (message.trim() === "" && !isFirstMessage) {
       return;
     }
-
+  
     setIsFirstMessage(false);
     setLoading(true);
-
+  
+    const newMessage = message.trim();
+  
     setMessages((prevMessages) => [
       ...prevMessages,
-      { type: "user", text: message.trim() },
+      { type: "user", text: newMessage },
       { type: "response", text: "" },
     ]);
-
-    if (isFirstMessage) {
-      initializeChatHistory();
-      updateChatHistory(message.trim());
-    }
-
-    const chatHistory =
-      JSON.parse(sessionStorage.getItem("chat_history")) || [];
-
+  
+    // Save the user's message to chat history
+    updateChatHistory(newMessage, "user");
+  
     try {
+      const chatHistory = isFirstMessage
+        ? [] // Send an empty array if it's the first message
+        : JSON.parse(sessionStorage.getItem("chat_history")) || [];
+  
+      console.log("Chat history:", chatHistory);
+  
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}generate-message/`,
         {
           user_id: loggedInUser.id,
-          message: message.trim(),
-          chat_history: chatHistory,
+          message: newMessage,
+          chat_history: JSON.stringify(chatHistory) // Ensure chat history is a JSON string
         }
       );
-      console.log("Responseeee", response);
+  
+      console.log("Response Data:", response.data);
+  
       const {
         visual_response,
         sql_response,
@@ -80,10 +110,9 @@ function PromptInput({ loggedInUser }) {
         react_component,
         insights,
       } = response.data;
+  
       const cleanedVisualResponse = visual_response.trim();
-      console.log("react component", react_component);
-      console.log("visual_response", visual_response);
-      console.log("results", query_result);
+  
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
         const responseIndex = updatedMessages.findIndex(
@@ -101,15 +130,18 @@ function PromptInput({ loggedInUser }) {
         }
         return updatedMessages;
       });
+  
+      // Save the model's response to chat history
+      updateChatHistory(response.data.insights || "", "model");
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
       setLoading(false);
     }
-
+  
     setMessage("");
   };
-
+  
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -142,8 +174,8 @@ function PromptInput({ loggedInUser }) {
   return (
     <>
       {isFirstMessage ? (
-        <div className="hero mt-10">
-          <div className="hero-content text-center mx-auto w-full max-w-2xl">
+        <div className="hero mt-10 flex flex-col">
+          <div className="flex flex-col hero-content text-center mx-auto w-full max-w-2xl">
             <h1 className="lg:text-5xl sm:text-5xl font-bold">
               Welcome Back, John
             </h1>
@@ -194,57 +226,44 @@ function PromptInput({ loggedInUser }) {
                   )}
                 </div>
                 <div className="w-full flex flex-col">
-                  {msg.type === "response" && msg.text === "" ? (
-                    <span className="loading loading-dots loading-md"></span>
-                  ) : msg.type === "response" &&
-                    msg.cleanedVisualResponse === "1" ? (
+                  {msg.type === "response" ? (
                     <>
-                      <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br />
-                      {msg.react_component && (
-                        <AreaChart
-                          data={msg.query_result}
-                          component_code={msg.react_component}
-                        />
-                      )}
-                      <br />
-                    </>
-                  ) : msg.type === "response" &&
-                    msg.cleanedVisualResponse === "2" ? (
-                    <>
-                      <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br />
-                      {msg.react_component && (
-                        <BarChart
-                          data={msg.query_result}
-                          component_code={msg.react_component}
-                        />
-                      )}
-                      <br />
-                    </>
-                  ) : msg.type === "response" &&
-                    msg.cleanedVisualResponse === "3" ? (
-                    <>
-                      <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br />
-                      {msg.react_component && (
-                        <LineChart
-                          data={msg.query_result}
-                          component_code={msg.react_component}
-                        />
-                      )}
-                      <br />
-                    </>
-                  ) : msg.type === "response" &&
-                    msg.cleanedVisualResponse === "4" ? (
-                    <>
-                      <ReactMarkdown>{msg.insights}</ReactMarkdown>
-                      <br />
-                      {msg.react_component && (
-                        <PieChart
-                          data={msg.query_result}
-                          component_code={msg.react_component}
-                        />
+                      {msg.text === "" ? (
+                        <span className="loading loading-dots loading-md"></span>
+                      ) : (
+                        <>
+                          <ReactMarkdown>{msg.insights}</ReactMarkdown>
+                          <br />
+                          {msg.cleanedVisualResponse === "1" &&
+                            msg.react_component && (
+                              <AreaChart
+                                data={msg.query_result}
+                                component_code={msg.react_component}
+                              />
+                            )}
+                          {msg.cleanedVisualResponse === "2" &&
+                            msg.react_component && (
+                              <BarChart
+                                data={msg.query_result}
+                                component_code={msg.react_component}
+                              />
+                            )}
+                          {msg.cleanedVisualResponse === "3" &&
+                            msg.react_component && (
+                              <LineChart
+                                data={msg.query_result}
+                                component_code={msg.react_component}
+                              />
+                            )}
+                          {msg.cleanedVisualResponse === "4" &&
+                            msg.react_component && (
+                              <PieChart
+                                data={msg.query_result}
+                                component_code={msg.react_component}
+                              />
+                            )}
+                          <br />
+                        </>
                       )}
                     </>
                   ) : (

@@ -58,12 +58,10 @@ class Preplan(APIView):
                 lng = location.get("lng")
 
                 if place_name and lat and lng:
-                    tourist_attractions.append({
-                        "name": place_name,
-                        "latitude": lat,
-                        "longitude": lng
-                    })
-            
+                    tourist_attractions.append(
+                        {"name": place_name, "latitude": lat, "longitude": lng}
+                    )
+
             print("Tourist attractions", tourist_attractions)
             api_key = os.getenv("GOOGLE_PRE_PLAN_API_KEY")
             if not api_key:
@@ -87,7 +85,7 @@ class Preplan(APIView):
                 generation_config=generation_config,
                 # safety_settings = Adjust safety settings
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
-                system_instruction="### TASK DESCRIPTION ###\nGenerate an itinerary based on the provided user information. Each day in the itinerary should contain a minimum of three mandatory activities and all the activities should be near each other with the travelling time less than 2 hours. In addition to the mandatory activities, you may recommend an Exploration/Shopping activity if the user's day has sufficient bandwidth. This estimation can be made based on the \"Time of Exploration\" (TOE) for the mandatory activities.\n\nEnsure that the user visits unique places each day, without repeating any places throughout the itinerary. If the number of days is more than the number of unique places, recommend some additional activities and adventures, but do not repeat places.\n\nThe itinerary should always start the day with a morning activity, followed by an afternoon activity, and end the day with an evening activity.\n\nAlways pickup from the tourist attraction array provided below, once all the locations are used then you can recommend places from your knowledge base.\n tourist_attractions \n\n\n \n\n### USER INPUT FORMAT ###\nThe user will provide the following input:\n\nstay_details\nnumber_of_days\nbudget\nadditional_preferences\n\n### OUTPUT FORMAT ###\nThe output should be a JSON structure formatted as follows:\n\n{\n  \"1\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ],\n  \"3\": [\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    },\n    {\n      \"place_name\": \"Place name\",\n      \"description\": \"Short description regarding the place followed with the best time to visit\",\n      \"TOE\": \"Time of Exploration\",\n      \"lat_long\": \"latitude,longitude\"\n    }\n  ]\n}\n\n\n### GUIDELINES ###\n\nUnique Places: Ensure all places in the itinerary are unique across all days.\nStructured Schedule: Each day starts with a morning activity, followed by an afternoon activity, and ends with an evening activity.\nExploration/Shopping Activity: Include an additional Exploration/Shopping activity if time permits, based on the TOE of mandatory activities.\nJSON Structure: Ensure the JSON output is correctly structured with no repeated places.\n\n### EXAMPLE OUTPUT CONTAINING DUPLICATE ###\n{\n  \"1\": [\n    {\n      \"place_name\": \"Central Park\",\n      \"description\": \"A large public park in New York City. Best time to visit: Morning\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.785091,-73.968285\"\n    },\n    {\n      \"place_name\": \"Metropolitan Museum of Art\",\n      \"description\": \"One of the world's largest and finest art museums. Best time to visit: Afternoon\",\n      \"TOE\": \"2.5 hours\",\n      \"lat_long\": \"40.779437,-73.963244\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Brooklyn Bridge\",\n      \"description\": \"A hybrid cable-stayed/suspension bridge. Best time to visit: Morning\",\n      \"TOE\": \"1.5 hours\",\n      \"lat_long\": \"40.706086,-73.996864\"\n    },\n    {\n      \"place_name\": \"Statue of Liberty\",\n      \"description\": \"A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon\",\n      \"TOE\": \"3 hours\",\n      \"lat_long\": \"40.689247,-74.044502\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n\n  ]\n}\n\nIn the above JSON we can see that the place_name \"Time Square\" is repeated in the day 2 as well even after the user visited that place in day 1.\nSo in such cases you'll need to suggest another place instead of it.\n\n### EXAMPLE CORRECT OUTPUT ###\n{\n  \"1\": [\n    {\n      \"place_name\": \"Central Park\",\n      \"description\": \"A large public park in New York City. Best time to visit: Morning\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.785091,-73.968285\"\n    },\n    {\n      \"place_name\": \"Metropolitan Museum of Art\",\n      \"description\": \"One of the world's largest and finest art museums. Best time to visit: Afternoon\",\n      \"TOE\": \"2.5 hours\",\n      \"lat_long\": \"40.779437,-73.963244\"\n    },\n    {\n      \"place_name\": \"Times Square\",\n      \"description\": \"A major commercial intersection and tourist destination. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.758896,-73.985130\"\n    }\n  ],\n  \"2\": [\n    {\n      \"place_name\": \"Brooklyn Bridge\",\n      \"description\": \"A hybrid cable-stayed/suspension bridge. Best time to visit: Morning\",\n      \"TOE\": \"1.5 hours\",\n      \"lat_long\": \"40.706086,-73.996864\"\n    },\n    {\n      \"place_name\": \"Statue of Liberty\",\n      \"description\": \"A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon\",\n      \"TOE\": \"3 hours\",\n      \"lat_long\": \"40.689247,-74.044502\"\n    },\n    {\n      \"place_name\": \"Broadway Show\",\n      \"description\": \"A popular location for theater performances. Best time to visit: Evening\",\n      \"TOE\": \"2 hours\",\n      \"lat_long\": \"40.759012,-73.984474\"\n    }\n\n  ]\n}\n\n\n### IMPORTANT ###\n\nEnsure all places in the itinerary are unique.\nStructure each day with a morning, afternoon, and evening activity.\nInclude additional Exploration/Shopping activities if time permits, based on the TOE.",
+                system_instruction='### TASK DESCRIPTION ###\nGenerate an itinerary based on the provided user information. Each day in the itinerary should contain a minimum of three mandatory activities and all the activities should be near each other with the travelling time less than 2 hours. In addition to the mandatory activities, you may recommend an Exploration/Shopping activity if the user\'s day has sufficient bandwidth. This estimation can be made based on the "Time of Exploration" (TOE) for the mandatory activities.\n\nEnsure that the user visits unique places each day, without repeating any places throughout the itinerary. If the number of days is more than the number of unique places, recommend some additional activities and adventures, but do not repeat places.\n\nThe itinerary should always start the day with a morning activity, followed by an afternoon activity, and end the day with an evening activity.\n\nAlways pickup from the tourist attraction array provided below, once all the locations are used then you can recommend places from your knowledge base.\n tourist_attractions \n\n\n \n\n### USER INPUT FORMAT ###\nThe user will provide the following input:\n\nstay_details\nnumber_of_days\nbudget\nadditional_preferences\n\n### OUTPUT FORMAT ###\nThe output should be a JSON structure formatted as follows:\n\n{\n  "1": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ],\n  "3": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ]\n}\n\n\n### GUIDELINES ###\n\nUnique Places: Ensure all places in the itinerary are unique across all days.\nStructured Schedule: Each day starts with a morning activity, followed by an afternoon activity, and ends with an evening activity.\nExploration/Shopping Activity: Include an additional Exploration/Shopping activity if time permits, based on the TOE of mandatory activities.\nJSON Structure: Ensure the JSON output is correctly structured with no repeated places.\n\n### EXAMPLE OUTPUT CONTAINING DUPLICATE ###\n{\n  "1": [\n    {\n      "place_name": "Central Park",\n      "description": "A large public park in New York City. Best time to visit: Morning",\n      "TOE": "2 hours",\n      "lat_long": "40.785091,-73.968285"\n    },\n    {\n      "place_name": "Metropolitan Museum of Art",\n      "description": "One of the world\'s largest and finest art museums. Best time to visit: Afternoon",\n      "TOE": "2.5 hours",\n      "lat_long": "40.779437,-73.963244"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Brooklyn Bridge",\n      "description": "A hybrid cable-stayed/suspension bridge. Best time to visit: Morning",\n      "TOE": "1.5 hours",\n      "lat_long": "40.706086,-73.996864"\n    },\n    {\n      "place_name": "Statue of Liberty",\n      "description": "A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon",\n      "TOE": "3 hours",\n      "lat_long": "40.689247,-74.044502"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n\n  ]\n}\n\nIn the above JSON we can see that the place_name "Time Square" is repeated in the day 2 as well even after the user visited that place in day 1.\nSo in such cases you\'ll need to suggest another place instead of it.\n\n### EXAMPLE CORRECT OUTPUT ###\n{\n  "1": [\n    {\n      "place_name": "Central Park",\n      "description": "A large public park in New York City. Best time to visit: Morning",\n      "TOE": "2 hours",\n      "lat_long": "40.785091,-73.968285"\n    },\n    {\n      "place_name": "Metropolitan Museum of Art",\n      "description": "One of the world\'s largest and finest art museums. Best time to visit: Afternoon",\n      "TOE": "2.5 hours",\n      "lat_long": "40.779437,-73.963244"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Brooklyn Bridge",\n      "description": "A hybrid cable-stayed/suspension bridge. Best time to visit: Morning",\n      "TOE": "1.5 hours",\n      "lat_long": "40.706086,-73.996864"\n    },\n    {\n      "place_name": "Statue of Liberty",\n      "description": "A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon",\n      "TOE": "3 hours",\n      "lat_long": "40.689247,-74.044502"\n    },\n    {\n      "place_name": "Broadway Show",\n      "description": "A popular location for theater performances. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.759012,-73.984474"\n    }\n\n  ]\n}\n\n\n### IMPORTANT ###\n\nEnsure all places in the itinerary are unique.\nStructure each day with a morning, afternoon, and evening activity.\nInclude additional Exploration/Shopping activities if time permits, based on the TOE.',
             )
 
             chat_session = model.start_chat(history=[])
@@ -221,7 +219,7 @@ class GenerateFinalPlan(APIView):
                     and result["price_level"] in budget_mapping[budget]
                 ]
 
-                 # If no restaurants found in the preferred budget range, fetch restaurants with price_level N/A
+                # If no restaurants found in the preferred budget range, fetch restaurants with price_level N/A
                 if not names_with_details:
                     names_with_details = [
                         {
@@ -570,7 +568,6 @@ class GeminiSuggestions(APIView):
             original_plan = request.data.get("original_plan")
             user_changes = request.data.get("user_changes")
             budget = request.data.get("budget")
-            print("budgett",budget)
             # Budget mapping
             if budget == 1:
                 user_budget = "Places with price_index: PRICE_LEVEL_FREE or PRICE_LEVEL_INEXPENSIVE is recommended."
@@ -1104,7 +1101,22 @@ class AddFinanceLog(APIView):
     """
 
     def post(self, request):
-        serializer = FinanceLogSerializer(data=request.data)
+        data = request.data
+        trip_id = data.get("trip_id")
+
+        # Fetch stay_details from UserTripInfo
+        try:
+            trip_info = UserTripInfo.objects.get(trip_id=trip_id)
+            stay_details = trip_info.stay_details
+        except UserTripInfo.DoesNotExist:
+            return Response(
+                {"error": "Trip not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Add stay_details to trip_location in the finance log entry
+        data["trip_location"] = stay_details
+
+        serializer = FinanceLogSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1133,6 +1145,10 @@ class GenerateMessageView(APIView):
     def post(self, request):
         user_id = request.data.get("user_id")
         message = request.data.get("message")
+        chat_history = request.data.get("chat_history")
+        chat_history = json.loads(chat_history)
+        if (len(chat_history)) !=0:
+          chat_history = chat_history["contents"]
         print("UserId", user_id)
         # Configure the genai API
         genai.configure(api_key=os.environ["GOOGLE_FINANCE_API_KEY"])
@@ -1150,9 +1166,10 @@ class GenerateMessageView(APIView):
             generation_config=generation_config,
             system_instruction='You are an intent classifier, you need to classify and divide in the user\'s questions in two different parts. The user questions will contain the information regarding the information the user wants to extract from the SQL database and the chart or visual the user wants to see that data. You also need to classify whether the questions asked is a follow-up questions based on the chat history given below. If there is no visual_type specified leave the field as blank.\n\n\n### OUTPUT ###\nYour output should be a JSON containing two entities namely,\n{\n"information_needed": " ",\n"visual_type": " "\n}\n\n### For example ###\nUser: Show me the day wise breakdown of my spendings in line chart\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": "line chart"\n}\n\nUser: Show me the day wise breakdown of my spendings.\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": ""\n}\n',
         )
-
-        response = intent_classifier.generate_content(message)
-
+        intent_classifer_chat_session = intent_classifier.start_chat(
+            history=chat_history
+        )
+        response = intent_classifer_chat_session.send_message(message)
         # Check if the response text contains ```json```
         if "```json" in response.text:
             json_response = self.extract_json_data(response.text)
@@ -1180,7 +1197,7 @@ class GenerateMessageView(APIView):
         model = genai.GenerativeModel(
             model_name="gemini-1.5-flash",
             generation_config=generation_config,
-            system_instruction="You are an intelligent data analyst. You have to extract the information from the user's question and identify if there is any mention of charts. Otherwise you need to use your knowledge of data visualization and recommend any of the below charts based on the user's scenario. The output should be the corresponding Id belonging to the chart. Your output should only be the ID and nothing else.\n\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n5. Line Chart = 3\n9. Pie Charts = 4\n\nFor example:\nUser: I want to see the distribution of cost based on categories.\nModel: 3",
+            system_instruction="You are an intelligent data analyst. You have to extract the information from the user's question and identify if there a need of creating a visual if needed you need to output the ID of the visual that would be best suited else just output 0. The output should be the corresponding Id belonging to the chart. Your output should only be the ID and nothing else.\n\n ###When will you create a visual?\n\n You will only create a visual if there is a comparison between more than 1 fields.\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n5. Line Chart = 3\n9. Pie Charts = 4\n\nFor example:\nUser: I want to see the distribution of cost based on categories.\nModel: 3\n User: Where did I spent the most in Goa?\nModel:0\n User: Give me a detailed breakdown of my spendings in Goa\n Model: 1",
         )
         if visual_type == "":
             visual_response_type = model.generate_content(information_needed)
@@ -1188,14 +1205,12 @@ class GenerateMessageView(APIView):
             visual_response_type = model.generate_content(visual_type)
 
         visual_response = visual_response_type.text
-
         # Placeholder SQL query (update as needed)
-        sql_response = f"""SELECT * FROM "frugalooAPI_financelog" WHERE user_id = '{user_id}'
+        sql_response = f"""SELECT trip_location,place,category,day,amount FROM "frugalooAPI_financelog" WHERE user_id = '{user_id}'
         """
 
         # Query Supabase with the SQL response
         query_result = self.execute_sql_query(sql_response)
-
         # Log the message and response asynchronously
         self.log_message_sync(user_id, message, sql_response)
 
@@ -1214,9 +1229,41 @@ class GenerateMessageView(APIView):
             # safety_settings = Adjust safety settings
             # See https://ai.google.dev/gemini-api/docs/safety-settings
             system_instruction=(
-                "You are a Finance Expert, you will be given the user's spending data in a particular trip you need to summarize the expenses by analyzing the trend in it and providing useful insights to the user. "
-                "Try to be as concise as possible the insights should be short. Also keep the tone of your conversation as friendly and cool as possible. Also I want you to extract only the necessary data from the given Query_results and append it in the JSON. "
-                'Give the output in a JSON response, in the below structure.\n\n{\n"insights": <Your insights>,\n"extracted_data": <Extract the necessary data>\n}'
+                f"""
+                You are a Finance Expert, you will be given the user's spending data in a particular trip you need to summarize the expenses by analyzing the trend in it and providing useful insights to the user.\n
+                Try to be as concise as possible the insights should be of ***20-30 words*** minimum. Also keep the tone of your conversation as friendly and cool as possible. Also I want you to extract only the necessary data from the given Query_results and append it in the JSON.\n
+                You can also perform arithematic operations (addition, subtraction, multiplication and division) on the User's trip data and give a cleaner data based on the user's question.\n
+                \n### User trip data:\n {query_result}\n\n\n
+                Give the output in a JSON response, in the below structure.\n\n{{\n"insights": "<Your insights>",\n"extracted_data": "<Extract the necessary data>"\n}}
+                ### Remember\n\n
+                Remember to enclose the keys and values of the JSON with double quotes ("") so that the user will be able to parse it.\n\n
+                ### Examples \n\n
+                
+                Wrong Format:\n
+{{
+"insights": "You spent a total of 19397 INR on your Goa trip. Looks like you enjoyed some good food and shopping there!",
+"extracted_data": [
+    {{'amount': 1500, 'place': 'Goan Classic Family Restaurant and Bar', 'category': 'Restaurant', 'day': 1, 'trip_location': 'Goa'}},
+    {{'amount': 10000, 'place': 'Calangute Beach', 'category': 'Shopping', 'day': 1, 'trip_location': 'Goa'}},
+    {{'amount': 1898, 'place': 'Arpora Saturday Night Market', 'category': 'Shopping', 'day': 1, 'trip_location': 'Goa'}},
+    {{'amount': 5999, 'place': 'Success', 'category': 'Restaurant', 'day': 1, 'trip_location': 'Goa'}}
+]
+                }}\n
+
+                Reason: The key and values are not enclosed in double quotes ("") instead they are enclosed in ('') which leads to an invalid JSON structure.\n
+
+                Correct format:\n
+                {{
+    "insights": "You spent a total of 19397 INR on your Goa trip. Looks like you enjoyed some good food and shopping there!",
+    "extracted_data": [
+        {{"amount": 1500, "place": "Goan Classic Family Restaurant and Bar", "category": "Restaurant", "day": 1, "trip_location": "Goa"}},
+        {{ "amount": 10000, "place": "Calangute Beach", "category": "Shopping", "day": 1, "trip_location": "Goa"}},
+        {{ "amount": 1898, "place": "Arpora Saturday Night Market", "category": "Shopping", "day": 1, "trip_location": "Goa"}},
+        {{"amount": 5999, "place": "Success", "category": "Restaurant", "day": 1, "trip_location": "Goa"}}
+    ]
+}}
+
+               """
             ),
         )
 
@@ -1226,8 +1273,8 @@ class GenerateMessageView(APIView):
             + "\nUser questions: "
             + information_needed
         )
-
-        insights_model_response = insights_model.generate_content(
+        insights_model_session = insights_model.start_chat(history=chat_history)
+        insights_model_response = insights_model_session.send_message(
             finance_input_formulation
         ).text
 
@@ -1235,7 +1282,6 @@ class GenerateMessageView(APIView):
         insights_model_response_cleaned = self.extract_json_data(
             insights_model_response
         )
-
         # Parse the cleaned JSON response
         try:
             response_json = json.loads(insights_model_response_cleaned)
@@ -1244,30 +1290,33 @@ class GenerateMessageView(APIView):
         except json.JSONDecodeError as e:
             insights = ""
             extracted_data = ""
+            print(e)
+        react_visual_component = ""
+        if visual_response.strip() != "0":
 
-        # Generate React visual component response using Gemini
-        generation_config_model3 = {
-            "temperature": 0.5,
-            "top_p": 0.95,
-            "top_k": 64,
-            "max_output_tokens": 8192,
-        }
+            # Generate React visual component response using Gemini
+            generation_config_model3 = {
+                "temperature": 0.5,
+                "top_p": 0.95,
+                "top_k": 64,
+                "max_output_tokens": 8192,
+            }
 
-        model3 = genai.GenerativeModel(
-            model_name="gemini-1.5-pro",
-            generation_config=generation_config_model3,
-            system_instruction="You are a ReactJS Expert, you need to create a static component with proper labeling based on the data received from the JSON input and the user question given to you by the user.\nYour output should **ONLY** be the static react component. \n\n### DATA INFORMATION ###\n1. Categories are divided into three main types: Shopping, Restaurant and Others\n2. Amount contains the information regarding the spendings of the user.\n3. day contains the information regarding the day on which the user spent the amount in his entire trip.\n4. place contains the information regarding the place where the user spent the amount.\n\n\n\n\n### COMPONENT ID MAPPING ###\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n3. Line Chart = 3\n4. Pie Charts = 4\n\n\nRemember you might need to dynamically change the below components based on the data used to.\n\n### AREA CHART REACT COMPONENT ###\nlabels: data.map((item) => `<Based on the input JSON>`),\n    datasets: [\n      {\n        label:  <Based on the input JSON>,\n        data: data.map((item) => item.<Based on the input JSON>),\n        fill: true,\n        backgroundColor: \"rgba(75, 192, 192, 0.2)\",\n        borderColor: \"rgba(75, 192, 192, 1)\",\n        tension: 0.1,\n      },\n    ],\n\n### BAR CHART REACT COMPONENT ###\nlabels: data.map((item) => `<Based on the input JSON>`),\n    datasets: [\n        {\n        label: `<Based on the input JSON>`,\n        data: data.map((item) => item.<Based on the input JSON>),\n        backgroundColor: 'rgba(75, 192, 192, 0.2)',\n        borderColor: 'rgba(75, 192, 192, 1)',\n        borderWidth: 1,\n        },\n    ],\n\n### LINE CHART REACT COMPONENT ###\n\n    labels: data.map((item) => `<Based on the input JSON>`),\n    datasets: [\n      {\n        label: <Based on the input JSON>,\n        data: data.map((item) => item.<Based on the input JSON>),\n        borderColor: \"rgba(75, 192, 192, 1)\",\n        backgroundColor: \"rgba(75, 192, 192, 0.2)\",\n        borderWidth: 1,\n        tension: 0.4,\n      },\n    ],\n\n\n### PIE CHART REACT COMPONENT ###\n\nlabels: data.map((item) => `<Based on the input JSON>`),\ndatasets: [\n    {\n    label: <Based on the input JSON>,\n    data: data.map((item) => item.<Based on the input JSON>),\n    backgroundColor: [\n        'rgba(255, 99, 132, 0.2)',\n        'rgba(54, 162, 235, 0.2)',\n        'rgba(255, 206, 86, 0.2)',\n        'rgba(75, 192, 192, 0.2)',\n        'rgba(153, 102, 255, 0.2)',\n        'rgba(255, 159, 64, 0.2)',\n    ],\n    borderColor: [\n        'rgba(255, 99, 132, 1)',\n        'rgba(54, 162, 235, 1)',\n        'rgba(255, 206, 86, 1)',\n        'rgba(75, 192, 192, 1)',\n        'rgba(153, 102, 255, 1)',\n        'rgba(255, 159, 64, 1)',\n    ],\n    borderWidth: 1,\n    },\n],\n\nYou will receive a JSON object in the below structure with the component ID.\n\n[{'id': 24, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 5000, 'place': 'Joss Chinoise Jaan Joss Banquets', 'category': 'Restaurant', 'day': 1}, {'id': 25, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 100, 'place': 'Chhatrapati Shivaji Maharaj Vastu Sangrahalaya', 'category': 'Others', 'day': 1}, {'id': 26, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 15000, 'place': 'Juhu Beach', 'category': 'Restaurant', 'day': 2}, {'id': 27, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 5000, 'place': 'Elephanta Caves', 'category': 'Shopping', 'day': 2}, {'id': 28, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 100, 'place': 'Sanjay Gandhi National Park', 'category': 'Restaurant', 'day': 3}, {'id': 29, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 1005, 'place': 'Midtown Restaurant Family Wine & Dine', 'category': 'Restaurant', 'day': 3}]\n\nComponent Id = 3\n\nYou need to identify the way the data is been named. And then generate the static react component with the appropriate labels and datasets mapping based on the component Id.\n\nFor the above JSON your static react component should be like:\n\nlabels: data.map((item) => `${item.category}`),\n    datasets: [\n      {\n        label: \"Category wise Spending\",\n        data: data.map((item) => item.amount),\n        borderColor: \"rgba(75, 192, 192, 1)\",\n        backgroundColor: \"rgba(75, 192, 192, 0.2)\",\n        borderWidth: 1,\n        tension: 0.4,\n      },\n    ],",
-        )
-        model3_input_formulation = (
-            str(extracted_data)
-            + "\nComponent Id: "
-            + visual_response
-            + "\nUser_question:"
-            + information_needed
-        )
-        react_visual_response = model3.generate_content(model3_input_formulation)
-        react_visual_raw = react_visual_response.text
-        react_visual_component = self.extract_chart_data(react_visual_raw)
+            model3 = genai.GenerativeModel(
+                model_name="gemini-1.5-pro",
+                generation_config=generation_config_model3,
+                system_instruction="You are a ReactJS Expert, you need to create a static component with proper labeling based on the data received from the JSON input and the user question given to you by the user.\nYour output should **ONLY** be the static react component. \n\n### DATA INFORMATION ###\n1. Categories are divided into three main types: Shopping, Restaurant and Others\n2. Amount contains the information regarding the spendings of the user.\n3. day contains the information regarding the day on which the user spent the amount in his entire trip.\n4. place contains the information regarding the place where the user spent the amount.\n5. trip_location contains the information about different places the user went. \n\n\n\n### COMPONENT ID MAPPING ###\nList of charts:\n1. Area Chart = 1\n2. Bar Chart = 2\n3. Line Chart = 3\n4. Pie Charts = 4\n\n\nRemember you might need to dynamically change the below components based on the data used to.\n\n### AREA CHART REACT COMPONENT ###\nlabels: data.map((item) => truncateLabel(`<Based on the input JSON>`)),\n    datasets: [\n      {\n        label:  <Based on the input JSON>,\n        data: data.map((item) => item.<Based on the input JSON>),\n        fill: true,\n        backgroundColor: \"rgba(75, 192, 192, 0.2)\",\n        borderColor: \"rgba(75, 192, 192, 1)\",\n        tension: 0.1,\n      },\n    ],\n\n### BAR CHART REACT COMPONENT ###\nlabels: data.map((item) =>  truncateLabel(`<Based on the input JSON>`)),\n    datasets: [\n        {\n        label: `<Based on the input JSON>`,\n        data: data.map((item) => item.<Based on the input JSON>),\n        backgroundColor: 'rgba(75, 192, 192, 0.2)',\n        borderColor: 'rgba(75, 192, 192, 1)',\n        borderWidth: 1,\n        },\n    ],\n\n### LINE CHART REACT COMPONENT ###\n\n    labels: data.map((item) =>  truncateLabel(`<Based on the input JSON>`)),\n    datasets: [\n      {\n        label: <Based on the input JSON>,\n        data: data.map((item) => item.<Based on the input JSON>),\n        borderColor: \"rgba(75, 192, 192, 1)\",\n        backgroundColor: \"rgba(75, 192, 192, 0.2)\",\n        borderWidth: 1,\n        tension: 0.4,\n      },\n    ],\n\n\n### PIE CHART REACT COMPONENT ###\n\nlabels:  truncateLabel(`<Based on the input JSON>`)),\ndatasets: [\n    {\n    label: <Based on the input JSON>,\n    data: data.map((item) => item.<Based on the input JSON>),\n    backgroundColor: [\n        'rgba(255, 99, 132, 0.2)',\n        'rgba(54, 162, 235, 0.2)',\n        'rgba(255, 206, 86, 0.2)',\n        'rgba(75, 192, 192, 0.2)',\n        'rgba(153, 102, 255, 0.2)',\n        'rgba(255, 159, 64, 0.2)',\n    ],\n    borderColor: [\n        'rgba(255, 99, 132, 1)',\n        'rgba(54, 162, 235, 1)',\n        'rgba(255, 206, 86, 1)',\n        'rgba(75, 192, 192, 1)',\n        'rgba(153, 102, 255, 1)',\n        'rgba(255, 159, 64, 1)',\n    ],\n    borderWidth: 1,\n    },\n],\n\nYou will receive a JSON object in the below structure with the component ID.\n\n[{'id': 24, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 5000, 'place': 'Joss Chinoise Jaan Joss Banquets', 'category': 'Restaurant', 'day': 1}, {'id': 25, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 100, 'place': 'Chhatrapati Shivaji Maharaj Vastu Sangrahalaya', 'category': 'Others', 'day': 1}, {'id': 26, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 15000, 'place': 'Juhu Beach', 'category': 'Restaurant', 'day': 2}, {'id': 27, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 5000, 'place': 'Elephanta Caves', 'category': 'Shopping', 'day': 2}, {'id': 28, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 100, 'place': 'Sanjay Gandhi National Park', 'category': 'Restaurant', 'day': 3}, {'id': 29, 'user_id': 'da034663-9c37-4c0f-8f86-7f63c2ed9471', 'trip_id': '3243a3d8-2622-4115-8312-74ca252ec97f', 'amount': 1005, 'place': 'Midtown Restaurant Family Wine & Dine', 'category': 'Restaurant', 'day': 3}]\n\nComponent Id = 3\n\nYou need to identify the way the data is been named. And then generate the static react component with the appropriate labels and datasets mapping based on the component Id.\n\nFor the above JSON your static react component should be like:\n\nlabels: data.map((item) =>truncateLabel(`${item.category}`)),\n    datasets: [\n      {\n        label: \"Category wise Spending\",\n        data: data.map((item) => item.amount),\n        borderColor: \"rgba(75, 192, 192, 1)\",\n        backgroundColor: \"rgba(75, 192, 192, 0.2)\",\n        borderWidth: 1,\n        tension: 0.4,\n      },\n    ],",
+            )
+            model3_input_formulation = (
+                str(extracted_data)
+                + "\nComponent Id: "
+                + visual_response
+                + "\nUser_question:"
+                + information_needed
+            )
+            react_visual_response = model3.generate_content(model3_input_formulation)
+            react_visual_raw = react_visual_response.text
+            react_visual_component = self.extract_chart_data(react_visual_raw)
 
         # Respond with the results
         response_data = {
