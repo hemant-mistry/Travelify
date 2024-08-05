@@ -35,6 +35,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
   });
   const [loading, setLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  const [error, setError] = useState(null);
 
   const loadingMessages = [
     "Building your itinerary...",
@@ -42,6 +43,13 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
     "Finding amazing restaurants and bars...",
     "Creating a memorable experience for you...",
     "Almost there...",
+  ];
+
+  const errorMessages = [
+    "Our AI took a wrong turn in the data highway. Don’t worry, it’s rerouting. Please try again.",
+    "Our AI is having a brain fart. Let’s try that again, shall we? We promise to make it worth your while.",
+    "Abracadabra! Our magic wand isn’t working quite right. Let’s try another spell.",
+    "We’re experiencing a brief moment of ‘thinking too hard’. Let’s try that again, shall we?",
   ];
 
   useEffect(() => {
@@ -89,6 +97,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
   const handleSubmit = async () => {
     setLoading(true);
     setLoadingMessageIndex(0); // Reset the loading message index
+    setError(null); // Reset the error state
 
     const additionalPreferences = Object.keys(preferences)
       .filter((key) => preferences[key])
@@ -128,6 +137,9 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
       navigate("/mytrips");
     } catch (error) {
       console.error("There was an error saving the trip details!", error);
+      // Randomize error message
+      const randomErrorMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
+      setError(randomErrorMessage);
     } finally {
       // Set the final loading message index
       setLoadingMessageIndex(loadingMessages.length - 1);
@@ -135,6 +147,10 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
       // Wait a bit before setting loading to false to show the final message
       setTimeout(() => setLoading(false), 2000);
     }
+  };
+
+  const handleRetry = () => {
+    handleSubmit();
   };
 
   return (
@@ -145,6 +161,52 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
           {loadingMessages[loadingMessageIndex]}
         </div>
       ) : (
+        <>
+        {error && (
+            <div
+              id="error-modal"
+              className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50"
+              aria-labelledby="modal-title"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="relative bg-[#0e1111] p-6 rounded-lg max-w-sm mx-auto">
+                <button
+                  type="button"
+                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                  data-modal-toggle="error-modal"
+                  onClick={() => setError(null)}
+                >
+                  <span className="sr-only">Close</span>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                </button>
+                <h3 className="text-lg font-semibold text-white mt-[-15px]" id="modal-title">
+                  Ran into a problem
+                </h3>
+                <p className="mt-2 text-sm text-custom-gray">{error}</p>
+                <button
+                  type="button"
+                  className="btn btn-xs justify-center mt-4 inline-flex items-center   text-sm font-medium text-white bg-red-500 rounded-lg shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                  onClick={handleRetry}
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
         <div className="pt-[80px]">
           <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
             Tell us more about your <span className="text-custom-light-blue">trip..</span>
@@ -225,6 +287,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
             </button>
           </div>
         </div>
+        </>
       )}
     </>
   );

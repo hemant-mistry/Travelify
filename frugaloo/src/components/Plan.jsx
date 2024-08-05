@@ -40,6 +40,9 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
   const [newPlan, setNewPlan] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
   const [suggestionloading, setSuggestionLoading] = useState(false);
+  const [error, setError] = useState(""); // State to hold error message
+  const [errorTimeout, setErrorTimeout] = useState(null);
+  const [retryCountdown, setRetryCountdown] = useState(0); // State for countdown
 
   useEffect(() => {
     // Function to fetch plan details based on tripId
@@ -83,6 +86,16 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
     fetchPlanProgress();
   }, [tripId]);
 
+  // Countdown effect
+  useEffect(() => {
+    if (retryCountdown > 0) {
+      const timer = setInterval(() => {
+        setRetryCountdown((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [retryCountdown]);
+
   const handleLocateClick = (dayData, dayIndex, trip_id) => {
     onLocateClick(dayData); // Pass day data to parent
 
@@ -112,8 +125,16 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
     }
   };
 
-  const handleAskGeminiClick = async (day) => {
+ const handleAskGeminiClick = async (day) => {
     setModalLoading(true);
+    setError(""); // Clear previous error message
+    setRetryCountdown(5); // Set countdown for 5 seconds
+
+    if (errorTimeout) {
+      clearTimeout(errorTimeout);
+      setErrorTimeout(null);
+    }
+
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}gemini-suggestions/`,
@@ -126,39 +147,38 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
         }
       );
 
-      // Check if response.data is already an object
       const outerData =
         typeof response.data === "string"
           ? JSON.parse(response.data)
           : response.data;
 
-      // Log the outerData for debugging
-      console.log("Outer Data:", JSON.stringify(outerData));
-
       const innerDataString = outerData.response_data;
-
-      // Log the innerDataString for debugging
-      console.log("Inner Data String:", innerDataString);
-
       const parsedPlanDetailsRaw =
         typeof innerDataString === "string"
           ? JSON.parse(innerDataString)
           : innerDataString;
 
       const changes = parsedPlanDetailsRaw.changes || "";
-      console.log("Changes:", changes);
       setPlanChanges(changes);
 
       const new_plan = parsedPlanDetailsRaw.generated_plan || "";
-      console.log("Generated Plan", new_plan);
       const parsedPlanDetails = Object.values(new_plan);
-      console.log("Parsed plan", parsedPlanDetails);
 
       setNewPlan(parsedPlanDetails);
       setSuggestionsModal(true);
-      setModalLoading(false);
     } catch (error) {
       console.error("Error fetching the original plan", error);
+      setError(
+        "There was an error fetching the suggestions. Please try again."
+      );
+
+      const timeoutId = setTimeout(() => {
+        setError("");
+        setRetryCountdown(5); // Reset countdown when the error message disappears
+      }, 5000);
+
+      setErrorTimeout(timeoutId);
+    } finally {
       setModalLoading(false);
     }
   };
@@ -170,6 +190,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
   };
 
   const handleSuggestionClick = async () => {
+    setUserChanges("")
     setSuggestionLoading(true);
     setPlanDetails(newPlan);
     console.log("newplan", JSON.stringify(newPlan));
@@ -258,7 +279,6 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                       <p className="text-neutral-content text-xs">
                         Estimated time for exploring: {activity.TOE}
                       </p>
-                      {/* Add any other details you want to display */}
                     </div>
                   ))}
 
@@ -368,24 +388,30 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                                         Itinerary?
                                       </h3>
                                     </div>
-                                    <div className="text-center">
-                                      <textarea
-                                        className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
-                                        rows={5}
-                                        placeholder="Describe the changes you want to make in the Itinerary..."
-                                        onChange={(e) =>
-                                          setUserChanges(e.target.value)
-                                        }
-                                      ></textarea>
-                                      <button
-                                        className="btn btn-outline btn-primary btn-sm mt-5"
-                                        onClick={() =>
-                                          handleAskGeminiClick(currentDay)
-                                        }
-                                      >
-                                        Get AI powered suggestions
-                                      </button>
-                                    </div>
+                                    {error ? (
+                                      <div className="text-red-500 text-center mt-4">
+                                      {error} {retryCountdown > 0 && `Retry in ${retryCountdown} seconds`}
+                                      </div>
+                                    ) : (
+                                      <div className="text-center">
+                                        <textarea
+                                          className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
+                                          rows={5}
+                                          placeholder="Describe the changes you want to make in the Itinerary..."
+                                          onChange={(e) =>
+                                            setUserChanges(e.target.value)
+                                          }
+                                        ></textarea>
+                                        <button
+                                          className="btn btn-outline btn-primary btn-sm mt-5"
+                                          onClick={() =>
+                                            handleAskGeminiClick(currentDay)
+                                          }
+                                        >
+                                          Get AI powered suggestions
+                                        </button>
+                                      </div>
+                                    )}
                                   </>
                                 )}
                               </div>
@@ -417,7 +443,9 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                       >
                         <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-success rounded-full group-hover:w-56 group-hover:h-56 text-black"></span>
                         <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg "></span>
-                        <span className="relative font-bold">Mark as completed?</span>
+                        <span className="relative font-bold">
+                          Mark as completed?
+                        </span>
                       </button>
 
                       <dialog id="my_modal_3" className="modal">
