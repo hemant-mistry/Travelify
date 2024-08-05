@@ -99,7 +99,7 @@ function App() {
             }
           />
           <Route
-            path="/PromptInput"
+            path="/myfinances"
             element={<PromptInput loggedInUser={loggedInUser} />}
           />
           <Route path="/mytrips" element={<Trip loggedInUser={loggedInUser} />} />

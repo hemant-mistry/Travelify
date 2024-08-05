@@ -444,7 +444,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                         <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-success rounded-full group-hover:w-56 group-hover:h-56 text-black"></span>
                         <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg "></span>
                         <span className="relative font-bold">
-                          Mark as completed?
+                          Mark it as completed?
                         </span>
                       </button>
 

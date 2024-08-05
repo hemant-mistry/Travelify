@@ -177,7 +177,7 @@ function PromptInput({ loggedInUser }) {
         <div className="flex flex-col pt-[80px]">
           <div className="flex flex-col text-center mx-auto w-full max-w-2xl">
             <h1 className="lg:text-5xl sm:text-5xl font-bold">
-              Welcome Back, John
+              Welcome back!
             </h1>
             <p className="py-6 lg:text-lg sm:text-lg">
               Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda

@@ -132,19 +132,19 @@ function Locate({ dayData = [], loggedInUser }) {
   return (
     <Fragment>
       <div
-        className="container flex justify-center items-center h-screen md:h-[600px] lg:h-[800px]"
-        style={{ margin: "auto", overflow: "hidden" }}
+        className="container flex items-center h-screen pt-[80px] lg:mx-auto"
+
       >
         <div
           className="flex justify-center items-center h-full w-full"
-          style={{ overflow: "hidden" }}
+
         >
           {isLoaded ? (
             <GoogleMap
               center={mapCenter}
               zoom={10}
               onClick={() => setActiveMarker(null)}
-              mapContainerStyle={{ height: "100%", width: "100%" }}
+              mapContainerStyle={{ height: "100%", width: "100%"}}
               options={mapOptions}
             >
               {markers.map(({ id, name, position, description }) => (
@@ -177,7 +177,7 @@ function Locate({ dayData = [], loggedInUser }) {
                         >
                           <p className="card-title text-md mb-4 font-bold">
                             {name}
-                            <div className="badge badge-error">Rush</div>
+                           
                           </p>
 
                           <p className="text-md font-normal">{description}</p>
