@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import ViewIcon from "../assets/ViewIcon.png";
-import deleteIcon from "../assets/deleteIcon.png";
 
 function Trip({ loggedInUser }) {
   const [tripDetails, setTripDetails] = useState([]);
@@ -60,18 +58,18 @@ function Trip({ loggedInUser }) {
       <div className="pt-[80px] text-2xl md:text-3xl font-bold pl-4 md:pl-6">
         My Itineraries
       </div>
-      <div className="text-2xl text-sm md:text-sm pl-4 mt-2 md:pl-6 text-sm">
+      <div className="text-sm md:text-sm pl-4 mt-2 md:pl-6">
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint et tempore
         cumque quaerat sequi blanditiis facilis impedit fugiat.
       </div>
-      <div className="flex flex-wrap justify-center ">
+      <div className="flex flex-wrap justify-center md:justify-start gap-6 md:ml-[6rem] md:mt-5">
         {tripDetails.map((trip, index) => (
           <div
             key={index}
-            className="max-w-xs w-full md:w-1/3 mx-10 mt-10 px-2 "
+            className="w-full sm:w-1/2 md:w-1/3 p-4 max-w-xs"
           >
-            <div className="card bg-[#0e1111] shadow-xl w-full rounded-[40px]">
-              <figure className="relative">
+            <div className="card bg-[#0e1111] shadow-xl rounded-[40px] h-[400px] flex flex-col">
+              <figure className="relative h-40">
                 {photoMap[trip.stay_details] ? (
                   <img
                     src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${
@@ -81,9 +79,9 @@ function Trip({ loggedInUser }) {
                     className="w-full h-40 object-cover rounded-t-md"
                   />
                 ) : (
-                  <div class="flex items-center justify-center w-full h-48 bg-gray-300 rounded sm:w-96 dark:bg-gray-700">
+                  <div className="flex items-center justify-center w-full h-40 bg-gray-300 rounded-t-md dark:bg-gray-700">
                     <svg
-                      class="w-10 h-10 text-gray-200 dark:text-gray-600"
+                      className="w-10 h-10 text-gray-200 dark:text-gray-600"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="currentColor"
@@ -94,16 +92,17 @@ function Trip({ loggedInUser }) {
                   </div>
                 )}
               </figure>
+              
               <div className="card-body text-sm text-center">
-                <h2 className="card-title text-md mx-auto font-lato">
-                  {trip.stay_details}
-                </h2>
-                <p className="font-lato text-custom-gray">
-                  <b>Number of days: </b>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                </p>
-                <div className="divider my-0"></div>
-                <div className="card-actions justify-end mt-0">
+              
+                  <h2 className="card-title text-md font-lato mx-auto">
+                    {trip.stay_details}
+                  </h2>
+                  <p className="font-lato text-custom-gray">
+                    {trip.places_descriptions}
+                  </p>
+              
+                <div className="card-actions justify-end mt-2">
                   <button
                     className="btn btn-active btn-link text-custom-gray text-md p-0"
                     onClick={() => handleViewClick(trip.trip_id)}

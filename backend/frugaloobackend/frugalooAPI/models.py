@@ -11,6 +11,7 @@ class UserTripInfo(models.Model):
     additional_preferences = models.CharField(max_length=255)
     generated_plan = models.TextField()
     nearby_restaurants = models.TextField(default="")
+    places_descriptions = models.TextField(default="")
 
 
 #User's progress information model

@@ -174,8 +174,8 @@ function PromptInput({ loggedInUser }) {
   return (
     <>
       {isFirstMessage ? (
-        <div className="hero mt-10 flex flex-col">
-          <div className="flex flex-col hero-content text-center mx-auto w-full max-w-2xl">
+        <div className="flex flex-col pt-[80px]">
+          <div className="flex flex-col text-center mx-auto w-full max-w-2xl">
             <h1 className="lg:text-5xl sm:text-5xl font-bold">
               Welcome Back, John
             </h1>
@@ -201,7 +201,7 @@ function PromptInput({ loggedInUser }) {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center mt-10">
+        <div className="flex flex-col items-center pt-[80px]">
           <div className="flex flex-col overflow-y-auto text-md w-full max-w-2xl h-[70vh] sm:h-[40vh] lg:h-[65vh] p-4 no-scrollbar">
             {messages.map((msg, index) => (
               <div

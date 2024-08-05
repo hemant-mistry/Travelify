@@ -83,10 +83,10 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
     fetchPlanProgress();
   }, [tripId]);
 
-  const handleLocateClick = (dayData,dayIndex,trip_id) => {
+  const handleLocateClick = (dayData, dayIndex, trip_id) => {
     onLocateClick(dayData); // Pass day data to parent
-    
-    navigate(`/locate/${trip_id}/${dayIndex+1}`);
+
+    navigate(`/locate/${trip_id}/${dayIndex + 1}`);
   };
 
   const handleConfirmClick = async (day) => {
@@ -122,7 +122,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
           current_day: day,
           original_plan: planDetails,
           user_changes: userChanges,
-          budget:budget
+          budget: budget,
         }
       );
 
@@ -193,18 +193,17 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center mt-[300px] text-primary">
-        <span className="loading loading-spinner loading-lg mr-5"></span>
-        Loading itinerary..
+      <div className="flex justify-center items-center pt-[300px] font-lato">
+        <span className="loading loading-spinner loading-lg mr-5 text-custom-blue"></span>
+        Loading Itinerary..
       </div>
     );
   }
 
   return (
     <>
-      <div className="text-center font-bold text-2xl lg:text-3xl">
-        Your personalized{" "}
-        <span className="text-primary">Itinerary..{tripId}</span>
+      <div className="text-center font-bold text-2xl lg:text-3xl pt-[80px]">
+        Your personalized Itinerary
       </div>
       <div className="timeline-container p-10">
         <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
@@ -236,7 +235,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                       : "timeline-end md:text-start justify-end"
                   }`}
                 >
-                  <time className="font-bold italic text-primary">
+                  <time className="font-bold italic text-custom-light-blue">
                     Day {dayIndex + 1}
                   </time>
                   {dayActivities.map((activity, activityIndex) => (
@@ -250,7 +249,9 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          {activity.place_name || activity.restaurant_name || activity.night_club_name}
+                          {activity.place_name ||
+                            activity.restaurant_name ||
+                            activity.night_club_name}
                         </a>
                       </div>
                       <p>{activity.description}</p>
@@ -395,7 +396,9 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
 
                       <button
                         className="btn btn-xs md:btn-sm bg-base-200"
-                        onClick={() => handleLocateClick(dayActivities,dayIndex,tripId)} // Pass day data
+                        onClick={() =>
+                          handleLocateClick(dayActivities, dayIndex, tripId)
+                        } // Pass day data
                       >
                         <img
                           src={googleMapIcon}
@@ -406,7 +409,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                       </button>
 
                       <button
-                        className="relative inline-flex items-center justify-center px-10 py-4 overflow-hidden bg-base-200 text-white rounded-lg group btn-xs md:btn-sm"
+                        className="relative inline-flex items-center justify-center px-10 py-4 overflow-hidden bg-base-200 text-gray rounded-lg group btn-xs md:btn-sm"
                         onClick={() => {
                           setSelectedDay(dayIndex + 1);
                           document.getElementById("my_modal_3").showModal();
@@ -414,7 +417,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                       >
                         <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-success rounded-full group-hover:w-56 group-hover:h-56 text-black"></span>
                         <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg "></span>
-                        <span className="relative">Mark as completed?</span>
+                        <span className="relative font-bold">Mark as completed?</span>
                       </button>
 
                       <dialog id="my_modal_3" className="modal">

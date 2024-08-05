@@ -8,10 +8,11 @@ export default {
     extend: {
       colors: {
         "custom-gray": "#A9A9A9",
-        "custom-blue": "#2D63D8"
+        "custom-blue": "#2D63D8",
+        "custom-light-blue": "#40A9EB",
       },
       fontFamily: {
-        lato: ['Lato', 'sans-serif'],
+        lato: ["Lato", "sans-serif"],
       },
     },
   },

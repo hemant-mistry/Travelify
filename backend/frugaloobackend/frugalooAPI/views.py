@@ -62,7 +62,6 @@ class Preplan(APIView):
                         {"name": place_name, "latitude": lat, "longitude": lng}
                     )
 
-            print("Tourist attractions", tourist_attractions)
             api_key = os.getenv("GOOGLE_PRE_PLAN_API_KEY")
             if not api_key:
                 return Response(
@@ -88,12 +87,10 @@ class Preplan(APIView):
                 system_instruction='### TASK DESCRIPTION ###\nGenerate an itinerary based on the provided user information. Each day in the itinerary should contain a minimum of three mandatory activities and all the activities should be near each other with the travelling time less than 2 hours. In addition to the mandatory activities, you may recommend an Exploration/Shopping activity if the user\'s day has sufficient bandwidth. This estimation can be made based on the "Time of Exploration" (TOE) for the mandatory activities.\n\nEnsure that the user visits unique places each day, without repeating any places throughout the itinerary. If the number of days is more than the number of unique places, recommend some additional activities and adventures, but do not repeat places.\n\nThe itinerary should always start the day with a morning activity, followed by an afternoon activity, and end the day with an evening activity.\n\nAlways pickup from the tourist attraction array provided below, once all the locations are used then you can recommend places from your knowledge base.\n tourist_attractions \n\n\n \n\n### USER INPUT FORMAT ###\nThe user will provide the following input:\n\nstay_details\nnumber_of_days\nbudget\nadditional_preferences\n\n### OUTPUT FORMAT ###\nThe output should be a JSON structure formatted as follows:\n\n{\n  "1": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ],\n  "3": [\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    },\n    {\n      "place_name": "Place name",\n      "description": "Short description regarding the place followed with the best time to visit",\n      "TOE": "Time of Exploration",\n      "lat_long": "latitude,longitude"\n    }\n  ]\n}\n\n\n### GUIDELINES ###\n\nUnique Places: Ensure all places in the itinerary are unique across all days.\nStructured Schedule: Each day starts with a morning activity, followed by an afternoon activity, and ends with an evening activity.\nExploration/Shopping Activity: Include an additional Exploration/Shopping activity if time permits, based on the TOE of mandatory activities.\nJSON Structure: Ensure the JSON output is correctly structured with no repeated places.\n\n### EXAMPLE OUTPUT CONTAINING DUPLICATE ###\n{\n  "1": [\n    {\n      "place_name": "Central Park",\n      "description": "A large public park in New York City. Best time to visit: Morning",\n      "TOE": "2 hours",\n      "lat_long": "40.785091,-73.968285"\n    },\n    {\n      "place_name": "Metropolitan Museum of Art",\n      "description": "One of the world\'s largest and finest art museums. Best time to visit: Afternoon",\n      "TOE": "2.5 hours",\n      "lat_long": "40.779437,-73.963244"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Brooklyn Bridge",\n      "description": "A hybrid cable-stayed/suspension bridge. Best time to visit: Morning",\n      "TOE": "1.5 hours",\n      "lat_long": "40.706086,-73.996864"\n    },\n    {\n      "place_name": "Statue of Liberty",\n      "description": "A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon",\n      "TOE": "3 hours",\n      "lat_long": "40.689247,-74.044502"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n\n  ]\n}\n\nIn the above JSON we can see that the place_name "Time Square" is repeated in the day 2 as well even after the user visited that place in day 1.\nSo in such cases you\'ll need to suggest another place instead of it.\n\n### EXAMPLE CORRECT OUTPUT ###\n{\n  "1": [\n    {\n      "place_name": "Central Park",\n      "description": "A large public park in New York City. Best time to visit: Morning",\n      "TOE": "2 hours",\n      "lat_long": "40.785091,-73.968285"\n    },\n    {\n      "place_name": "Metropolitan Museum of Art",\n      "description": "One of the world\'s largest and finest art museums. Best time to visit: Afternoon",\n      "TOE": "2.5 hours",\n      "lat_long": "40.779437,-73.963244"\n    },\n    {\n      "place_name": "Times Square",\n      "description": "A major commercial intersection and tourist destination. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.758896,-73.985130"\n    }\n  ],\n  "2": [\n    {\n      "place_name": "Brooklyn Bridge",\n      "description": "A hybrid cable-stayed/suspension bridge. Best time to visit: Morning",\n      "TOE": "1.5 hours",\n      "lat_long": "40.706086,-73.996864"\n    },\n    {\n      "place_name": "Statue of Liberty",\n      "description": "A colossal neoclassical sculpture on Liberty Island. Best time to visit: Afternoon",\n      "TOE": "3 hours",\n      "lat_long": "40.689247,-74.044502"\n    },\n    {\n      "place_name": "Broadway Show",\n      "description": "A popular location for theater performances. Best time to visit: Evening",\n      "TOE": "2 hours",\n      "lat_long": "40.759012,-73.984474"\n    }\n\n  ]\n}\n\n\n### IMPORTANT ###\n\nEnsure all places in the itinerary are unique.\nStructure each day with a morning, afternoon, and evening activity.\nInclude additional Exploration/Shopping activities if time permits, based on the TOE.',
             )
 
-            chat_session = model.start_chat(history=[])
-
             concatenated_input = f"Stay Details: {stay_details}\nNumber of Days: {number_of_days}\nBudget: {budget}\nAdditional Preferences: {additional_preferences}"
-
-            response = chat_session.send_message(concatenated_input)
+            response = model.generate_content(concatenated_input)
             response_data = response.text
+
             response = {
                 "user_id": user_id,
                 "stay_details": stay_details,
@@ -127,6 +124,7 @@ class GenerateFinalPlan(APIView):
         additional_preferences,
         generated_plan,
         nearby_restaurants,
+        places_description_response,
     ):
         """
         Inserts trip details into the UserTripInfo model.
@@ -148,6 +146,7 @@ class GenerateFinalPlan(APIView):
             additional_preferences=additional_preferences,
             generated_plan=generated_plan,
             nearby_restaurants=nearby_restaurants,
+            places_descriptions=places_description_response,
         )
 
     def extract_lat_long(self, data):
@@ -277,11 +276,28 @@ class GenerateFinalPlan(APIView):
                 # See https://ai.google.dev/gemini-api/docs/safety-settings
                 system_instruction='Role: You are an intelligent travel planner.\n\nObjective: Integrate the best matching restaurants from a provided list of nearby options into an existing itinerary based on user preferences. You will receive two JSON objects: "nearby_restaurants" and "response_data". Always suggest unique restaurants only.\n\n### Input Details: ###\n\n1. nearby_restaurants: A JSON object containing lists of restaurants near each place the user is visiting. Each restaurant has a description, TOE (Time of Exploration), and latitude and longitude information.\n\n2. response_data: A JSON object representing the user\'s itinerary, where you will integrate the best matching restaurants.\n\n### Task: ###\n\n1. Select Restaurants:\nBy default, recommend the best-rated and cheapest restaurant.\nIntegrate the selected restaurants into the appropriate places in the "response_data".\n\n\nOutput: Provide only the updated "response_data" JSON. Ensure that the JSON is correctly structured without any bad escaped characters.\n\n### GENERAL STRUCTURE ###\n\n{\n  "response_data": {\n    "1": [\n      {\n        "place_name": <Place_one>,\n        "description": "val1",\n        "TOE": "val2",\n        "lat_long": "lat,long"\n      },\n      {\n        "restaurant_name": <Restaurant near to the Place_one>,\n        "description": "<A short description related to the restaurant>",\n        "TOE": "val2",\n        "lat_long": "lat,long"\n      },\n      {\n        "place_name": <Place_two>,\n        "description": "val1",\n        "TOE": "val2",\n        "lat_long": "lat,long"\n      },\n{\n        "place_name": <Place_three>,\n        "description": "val1",\n        "TOE": "val2",\n        "lat_long": "lat,long"\n      },\n{\n        "restaurant_name": <Restaurant near to the Place_three>,\n        "description": "<A short description related to the restaurant",\n        "TOE": "val2",\n        "lat_long": "lat,long"\n      },\n\n    ],\n    "day_2": [\n      ...\n    ]\n  }\n}\n\n\n### Guidelines: ###\n\n1. Ensure the selected restaurants are close to the places in the itinerary.\n2. Maintain the correct structure and format of the JSON.\n3. Avoid any bad escaped characters.\n\n### EXAMPLE INPUT ###\n\n{\n"nearby_restaurants": {\n"1": {\n"Gateway of India": [\n{\n"name": "Shamiana",\n"latitude": 18.9220554,\n"longitude": 72.8330387,\n"rating": 4.7,\n"price_level": 3\n},\n{\n"name": "Golden Dragon",\n"latitude": 18.9218167,\n"longitude": 72.8334331,\n"rating": 4.6,\n"price_level": 4\n},\n{\n"name": "Wasabi by Morimoto",\n"latitude": 18.9225215,\n"longitude": 72.83322919999999,\n"rating": 4.6,\n"price_level": 4\n},\n{\n"name": "Souk",\n"latitude": 18.9220554,\n"longitude": 72.8330387,\n"rating": 4.6,\n"price_level": 4\n},\n{\n"name": "Sea Lounge",\n"latitude": 18.921611,\n"longitude": 72.83330509999999,\n"rating": 4.5,\n"price_level": 4\n}\n],\n"Elephanta Caves": [],\n"Dhobi Ghat": [\n{\n"name": "Saikrupa Hotel",\n"latitude": 18.9618653,\n"longitude": 72.8350256,\n"rating": 5,\n"price_level": "N/A"\n},\n{\n"name": "ZAS Kitchen",\n"latitude": 18.95548879999999,\n"longitude": 72.83328929999999,\n"rating": 4.6,\n"price_level": "N/A"\n},\n{\n"name": "Bon Appetit",\n"latitude": 18.9545604,\n"longitude": 72.8332453,\n"rating": 4.5,\n"price_level": "N/A"\n},\n{\n"name": "Arrakis Cafe",\n"latitude": 18.9583136,\n"longitude": 72.83748969999999,\n"rating": 4.4,\n"price_level": 1\n},\n{\n"name": "Cafe Shaheen",\n"latitude": 18.9576754,\n"longitude": 72.83133800000002,\n"rating": 4.2,\n"price_level": "N/A"\n}\n]\n},\n"2": {\n"Chhatrapati Shivaji Maharaj Terminus": [\n{\n"name": "Super Taste",\n"latitude": 18.9533807,\n"longitude": 72.8348168,\n"rating": 5,\n"price_level": "N/A"\n},\n{\n"name": "Hotel Grant House",\n"latitude": 18.945688,\n"longitude": 72.8350631,\n"rating": 4.6,\n"price_level": 2\n},\n{\n"name": "Bon Appetit",\n"latitude": 18.9545604,\n"longitude": 72.8332453,\n"rating": 4.5,\n"price_level": "N/A"\n},\n{\n"name": "Royal China",\n"latitude": 18.9384896,\n"longitude": 72.8328156,\n"rating": 4.4,\n"price_level": 3\n},\n{\n"name": "Ustaadi",\n"latitude": 18.9456713,\n"longitude": 72.8341837,\n"rating": 4.3,\n"price_level": 3\n}\n],\n"Kanheri Caves": [\n{\n"name": "Famous Chinese",\n"latitude": 19.1353643,\n"longitude": 72.8995789,\n"rating": 5,\n"price_level": "N/A"\n},\n{\n"name": "Mumbai Vadapav - मुंबई वडापाव",\n"latitude": 19.1358904,\n"longitude": 72.90076499999999,\n"rating": 4.9,\n"price_level": "N/A"\n},\n{\n"name": "Anna\'s Kitchen",\n"latitude": 19.1351649,\n"longitude": 72.89989829999999,\n"rating": 4.8,\n"price_level": "N/A"\n},\n{\n"name": "chandshah wali garib nawaz hotel",\n"latitude": 19.1393675,\n"longitude": 72.9046766,\n"rating": 4.5,\n"price_level": 1\n},\n{\n"name": "Skky - Ramada",\n"latitude": 19.1358383,\n"longitude": 72.8985196,\n"rating": 4.3,\n"price_level": "N/A"\n}\n],\n"Marine Drive": [\n{\n"name": "All Seasons Banquets",\n"latitude": 18.938381,\n"longitude": 72.824679,\n"rating": 4.9,\n"price_level": "N/A"\n},\n{\n"name": "The Gourmet Restaurant",\n"latitude": 18.9389568,\n"longitude": 72.8287517,\n"rating": 4.7,\n"price_level": "N/A"\n},\n{\n"name": "Joss Chinoise Jaan Joss Banquets",\n"latitude": 18.93289,\n"longitude": 72.83127999999999,\n"rating": 4.7,\n"price_level": "N/A"\n},\n{\n"name": "Royal China",\n"latitude": 18.9384896,\n"longitude": 72.8328156,\n"rating": 4.4,\n"price_level": 3\n},\n{\n"name": "Castle Hotel",\n"latitude": 18.9447236,\n"longitude": 72.8289277,\n"rating": 4.3,\n"price_level": "N/A"\n}\n]\n},\n"3": {\n"Juhu Beach": [\n{\n"name": "Hakkasan Mumbai",\n"latitude": 19.0608636,\n"longitude": 72.834589,\n"rating": 4.7,\n"price_level": 4\n},\n{\n"name": "Bonobo",\n"latitude": 19.0655221,\n"longitude": 72.8340542,\n"rating": 4.3,\n"price_level": 3\n},\n{\n"name": "Candies",\n"latitude": 19.0610866,\n"longitude": 72.8266907,\n"rating": 4.3,\n"price_level": 2\n},\n{\n"name": "Escobar",\n"latitude": 19.0600351,\n"longitude": 72.8363962,\n"rating": 4.2,\n"price_level": 3\n},\n{\n"name": "Joseph’s Tandoori Kitchen",\n"latitude": 19.0617858,\n"longitude": 72.8303955,\n"rating": 4.2,\n"price_level": 2\n}\n],\n"Mani Bhavan": [\n{\n"name": "MAYUR HOSPITALITY",\n"latitude": 18.9552008,\n"longitude": 72.8281485,\n"rating": 4.8,\n"price_level": "N/A"\n},\n{\n"name": "Bon Appetit",\n"latitude": 18.9545604,\n"longitude": 72.8332453,\n"rating": 4.5,\n"price_level": "N/A"\n},\n{\n"name": "Haji Tikka - The Kabab Corner",\n"latitude": 18.9599894,\n"longitude": 72.8306206,\n"rating": 4.3,\n"price_level": 2\n},\n{\n"name": "Kings Shawarma",\n"latitude": 18.9617761,\n"longitude": 72.82895789999999,\n"rating": 4.3,\n"price_level": 2\n},\n{\n"name": "Cafe Shaheen",\n"latitude": 18.9576754,\n"longitude": 72.83133800000002,\n"rating": 4.2,\n"price_level": "N/A"\n}\n],\n"Siddhivinayak Temple": [\n{\n"name": "Food Corp",\n"latitude": 18.969915,\n"longitude": 72.82032509999999,\n"rating": 5,\n"price_level": "N/A"\n},\n{\n"name": "Food Box",\n"latitude": 18.9752524,\n"longitude": 72.82382179999999,\n"rating": 4.4,\n"price_level": "N/A"\n},\n{\n"name": "Natural Ice Cream",\n"latitude": 18.9677866,\n"longitude": 72.82051009999999,\n"rating": 4.4,\n"price_level": 2\n},\n{\n"name": "Sarvi Restaurant",\n"latitude": 18.9668207,\n"longitude": 72.8291165,\n"rating": 4.2,\n"price_level": 2\n},\n{\n"name": "Grills & Wok",\n"latitude": 18.9707473,\n"longitude": 72.8323569,\n"rating": 4.2,\n"price_level": 2\n}\n]\n}\n},\n"response_data": {\n"1": [\n{\n"place_name": "Gateway of India",\n"description": "The Gateway of India is an arch monument built in 1924. It is a popular tourist destination, especially during the evening.",\n"TOE": "1.5 hours",\n"lat_long": "18.9220, 72.8347"\n},\n{\n"place_name": "Elephanta Caves",\n"description": "The Elephanta Caves are a UNESCO World Heritage Site located on an island near Mumbai. The caves are dedicated to the Hindu god Shiva and are known for their intricate carvings. It is recommended to visit in the morning or afternoon.",\n"TOE": "2.5 hours",\n"lat_long": "18.9843, 72.8777"\n},\n{\n"place_name": "Dhobi Ghat",\n"description": "Dhobi Ghat is an open-air laundry in Mumbai. It is a unique and fascinating place to visit. It is recommended to visit in the morning or afternoon.",\n"TOE": "1 hour",\n"lat_long": "18.9583, 72.8343"\n}\n],\n"2": [\n{\n"place_name": "Chhatrapati Shivaji Maharaj Terminus",\n"description": "Chhatrapati Shivaji Maharaj Terminus is a UNESCO World Heritage Site located in Mumbai. It is a beautiful example of Victorian Gothic Revival architecture. It is recommended to visit in the morning or afternoon.",\n"TOE": "2 hours",\n"lat_long": "18.9491, 72.8335"\n},\n{\n"place_name": "Kanheri Caves",\n"description": "The Kanheri Caves are a group of ancient Buddhist cave temples located in the Sanjay Gandhi National Park. It is recommended to visit in the morning or afternoon.",\n"TOE": "3 hours",\n"lat_long": "19.1426, 72.9018"\n},\n{\n"place_name": "Marine Drive",\n"description": "Marine Drive is a beautiful promenade located along the coast of Mumbai. It is a popular spot for evening walks and strolls.",\n"TOE": "1 hour",\n"lat_long": "18.9392, 72.8247"\n}\n],\n"3": [\n{\n"place_name": "Juhu Beach",\n"description": "Juhu Beach is a popular beach in Mumbai. It is a great place to relax and enjoy the sunset. It is recommended to visit in the evening.",\n"TOE": "2 hours",\n"lat_long": "19.0646, 72.8379"\n},\n{\n"place_name": "Mani Bhavan",\n"description": "Mani Bhavan is a historic building in Mumbai that was once the home of Mahatma Gandhi. It is a popular destination for history buffs. It is recommended to visit in the morning or afternoon.",\n"TOE": "1.5 hours",\n"lat_long": "18.9582, 72.8291"\n},\n{\n"place_name": "Siddhivinayak Temple",\n"description": "Siddhivinayak Temple is a popular Hindu temple dedicated to Lord Ganesha. It is a popular destination for devotees and tourists alike. It is recommended to visit in the morning or afternoon.",\n"TOE": "1 hour",\n"lat_long": "18.9727, 72.8252"\n}\n]\n}\n}\n\n\n\n### EXAMPLE OUTPUT ###\n{\n    "1": [\n      {\n        "place_name": "Gateway of India",\n        "description": "The Gateway of India is an arch monument built in 1924. It is a popular tourist destination, especially during the evening.",\n        "TOE": "1.5 hours",\n        "lat_long": "18.9220, 72.8347"\n      },\n      {\n        "restaurant_name": "Shamiana",\n        "description": "A fine dining restaurant serving Indian, Asian, and Continental cuisines.",\n        "TOE": "1.5 hours",\n        "lat_long": "18.9220554, 72.8330387"\n      },\n      {\n        "place_name": "Elephanta Caves",\n        "description": "The Elephanta Caves are a UNESCO World Heritage Site located on an island near Mumbai. The caves are dedicated to the Hindu god Shiva and are known for their intricate carvings. It is recommended to visit in the morning or afternoon.",\n        "TOE": "2.5 hours",\n        "lat_long": "18.9843, 72.8777"\n      },\n      {\n        "place_name": "Dhobi Ghat",\n        "description": "Dhobi Ghat is an open-air laundry in Mumbai. It is a unique and fascinating place to visit. It is recommended to visit in the morning or afternoon.",\n        "TOE": "1 hour",\n        "lat_long": "18.9583, 72.8343"\n      },\n      {\n        "restaurant_name": "Arrakis Cafe",\n        "description": "A cafe offering a casual dining experience with a variety of options.",\n        "TOE": "1 hour",\n        "lat_long": "18.9583136, 72.83748969999999"\n      }\n    ],\n    "2": [\n      {\n        "place_name": "Chhatrapati Shivaji Maharaj Terminus",\n        "description": "Chhatrapati Shivaji Maharaj Terminus is a UNESCO World Heritage Site located in Mumbai. It is a beautiful example of Victorian Gothic Revival architecture. It is recommended to visit in the morning or afternoon.",\n        "TOE": "2 hours",\n        "lat_long": "18.9491, 72.8335"\n      },\n      {\n        "restaurant_name": "Super Taste",\n        "description": "A local restaurant known for its delicious and affordable food.",\n        "TOE": "2 hours",\n        "lat_long": "18.9533807, 72.8348168"\n      },\n      {\n        "place_name": "Kanheri Caves",\n        "description": "The Kanheri Caves are a group of ancient Buddhist cave temples located in the Sanjay Gandhi National Park. It is recommended to visit in the morning or afternoon.",\n        "TOE": "3 hours",\n        "lat_long": "19.1426, 72.9018"\n      },\n      {\n        "restaurant_name": "Famous Chinese",\n        "description": "A local restaurant serving authentic Chinese dishes.",\n        "TOE": "3 hours",\n        "lat_long": "19.1353643, 72.8995789"\n      },\n      {\n        "place_name": "Marine Drive",\n        "description": "Marine Drive is a beautiful promenade located along the coast of Mumbai. It is a popular spot for evening walks and strolls.",\n        "TOE": "1 hour",\n        "lat_long": "18.9392, 72.8247"\n      },\n      {\n        "restaurant_name": "All Seasons Banquets",\n        "description": "A banquet hall offering a wide selection of cuisines.",\n        "TOE": "1 hour",\n        "lat_long": "18.938381, 72.824679"\n      }\n    ],\n    "3": [\n      {\n        "place_name": "Juhu Beach",\n        "description": "Juhu Beach is a popular beach in Mumbai. It is a great place to relax and enjoy the sunset. It is recommended to visit in the evening.",\n        "TOE": "2 hours",\n        "lat_long": "19.0646, 72.8379"\n      },\n      {\n        "restaurant_name": "Hakkasan Mumbai",\n        "description": "A fine dining restaurant offering modern Cantonese cuisine.",\n        "TOE": "2 hours",\n        "lat_long": "19.0608636, 72.834589"\n      },\n      {\n        "place_name": "Mani Bhavan",\n        "description": "Mani Bhavan is a historic building in Mumbai that was once the home of Mahatma Gandhi. It is a popular destination for history buffs. It is recommended to visit in the morning or afternoon.",\n        "TOE": "1.5 hours",\n        "lat_long": "18.9582, 72.8291"\n      },\n      {\n        "restaurant_name": "MAYUR HOSPITALITY",\n        "description": "A restaurant offering a variety of cuisines and a casual dining experience.",\n        "TOE": "1.5 hours",\n        "lat_long": "18.9552008, 72.8281485"\n      },\n      {\n        "place_name": "Siddhivinayak Temple",\n        "description": "Siddhivinayak Temple is a popular Hindu temple dedicated to Lord Ganesha. It is a popular destination for devotees and tourists alike. It is recommended to visit in the morning or afternoon.",\n        "TOE": "1 hour",\n        "lat_long": "18.9727, 72.8252"\n      },\n      {\n        "restaurant_name": "Food Corp",\n        "description": "A restaurant known for its quick and affordable food.",\n        "TOE": "1 hour",\n        "lat_long": "18.969915, 72.82032509999999"\n      }\n    ]\n}',
             )
-
-            chat_session = model.start_chat(history=[])
-            response_merged = chat_session.send_message(str(response_raw))
+            response_merged = model.generate_content(str(response_raw))
 
             response_data_unmerged = response_merged.text
+            generation_config_places_description = {
+                "temperature": 0.5,
+                "top_p": 0.95,
+                "top_k": 64,
+                "max_output_tokens": 8192,
+                "response_mime_type": "text/plain",
+            }
+            places_description = genai.GenerativeModel(
+                model_name="gemini-1.5-flash",
+                generation_config=generation_config_places_description,
+                # safety_settings = Adjust safety settings
+                # See https://ai.google.dev/gemini-api/docs/safety-settings
+                system_instruction="You will receive the places name, your job is to write a short description about it. It will be used to give a overview of the city. The description should be under 40 words and just one sentence.",
+            )
+
+            places_description_response = places_description.generate_content(
+                stay_details
+            ).text
+
             self.insert_trip_details(
                 user_id,
                 stay_details,
@@ -290,6 +306,7 @@ class GenerateFinalPlan(APIView):
                 additional_preferences,
                 response_data_unmerged,
                 nearby_restaurants,
+                places_description_response,
             )
 
             return Response(response_data_unmerged, status=status.HTTP_201_CREATED)
@@ -332,51 +349,51 @@ class FetchTripDetails(APIView):
             )
 
 
-
 class GetPhotosForLocations(APIView):
     def post(self, request):
         try:
-            locations = request.data.get('locations', [])
+            locations = request.data.get("locations", [])
             photo_map = {}
 
             if not locations:
-                return Response({'error': 'No locations provided'}, status=status.HTTP_400_BAD_REQUEST)
-            
+                return Response(
+                    {"error": "No locations provided"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # Fetch photos for each location
             for location in locations:
-                location_name = location.get('stay_details')
+                location_name = location.get("stay_details")
                 if location_name:
                     photo_reference = self.get_photo_reference(location_name)
                     if photo_reference:
                         photo_map[location_name] = photo_reference
 
             return Response(photo_map)
-        
+
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def get_photo_reference(self, location_name):
-        url = 'https://places.googleapis.com/v1/places:searchText'
+        url = "https://places.googleapis.com/v1/places:searchText"
         headers = {
-            'X-Goog-Api-Key': os.environ.get("GOOGLE_PLACES"),
-            'X-Goog-FieldMask': 'places.displayName,places.photos',
+            "X-Goog-Api-Key": os.environ.get("GOOGLE_PLACES"),
+            "X-Goog-FieldMask": "places.displayName,places.photos",
         }
-        body = {
-            'textQuery': location_name,
-            'pageSize': 1
-        }
+        body = {"textQuery": location_name, "pageSize": 1}
 
         response = requests.post(url, headers=headers, json=body)
         response_data = response.json()
 
-        if response_data.get('places'):
-            photos = response_data['places'][0].get('photos', [])
+        if response_data.get("places"):
+            photos = response_data["places"][0].get("photos", [])
             if photos:
-                photo_reference = photos[0]['name'].split('/photos/')[1]
+                photo_reference = photos[0]["name"].split("/photos/")[1]
                 return photo_reference
 
         return None
-
 
 
 class FetchPlan(APIView):
@@ -623,7 +640,6 @@ class GeminiSuggestions(APIView):
             else:
                 user_budget = "Places with price_index: PRICE_LEVEL_VERY_EXPENSIVE is recommended."
 
-            print("User budget preference", user_budget)
             # Phase 1: Calling the intent classifier to extract the places_types based on user's query.
             generation_config_places_type_extractor = {
                 "temperature": 0,
@@ -649,7 +665,6 @@ class GeminiSuggestions(APIView):
             serializer = UserTripInfoSerializer(trip_info)
             lat_long_values = self.extract_lat_long(original_plan)
             nearby_places = self.fetch_nearby_preferences(lat_long_values, places_types)
-            print("Fetched nearby places", nearby_places)
 
             generation_config = {
                 "temperature": 0.5,
@@ -1062,8 +1077,6 @@ In the above JSON you forgort to enclose the  'A magnificent Mughal-era mausoleu
 "A magnificent Mughal-era mausoleum. Best time to visit: Afternoon"
 
 """,
-
-
             )
 
             chat_session = model_2.start_chat(history=[])
@@ -1072,8 +1085,7 @@ In the above JSON you forgort to enclose the  'A magnificent Mughal-era mausoleu
 
             response = chat_session.send_message(concatenated_input)
             response_data = response.text
-            print("###################    OVERALL PLAN  ###################")
-            print(response_data)
+
             response = {
                 "user_changes": user_changes,
                 "current_day": current_day,
@@ -1194,9 +1206,8 @@ class GenerateMessageView(APIView):
         message = request.data.get("message")
         chat_history = request.data.get("chat_history")
         chat_history = json.loads(chat_history)
-        if (len(chat_history)) !=0:
-          chat_history = chat_history["contents"]
-        print("UserId", user_id)
+        if (len(chat_history)) != 0:
+            chat_history = chat_history["contents"]
         # Configure the genai API
         genai.configure(api_key=os.environ["GOOGLE_FINANCE_API_KEY"])
 
@@ -1337,7 +1348,6 @@ class GenerateMessageView(APIView):
         except json.JSONDecodeError as e:
             insights = ""
             extracted_data = ""
-            print(e)
         react_visual_component = ""
         if visual_response.strip() != "0":
 
@@ -1443,9 +1453,6 @@ class GenerateMessageView(APIView):
             # Execute the RPC function
             result = self.supabase.rpc("execute_sql", {"query": sql_query}).execute()
 
-            # Print the result for debugging
-            print("Supabase result:", result)
-
             # Check if result contains errors or data
             if hasattr(result, "error"):
                 return {"error": result.error}
@@ -1453,8 +1460,6 @@ class GenerateMessageView(APIView):
             if hasattr(result, "data") and result.data:
                 return result.data
             else:
-                # If there's no specific error, print out the result object
-                print("Unexpected result structure:", result)
                 return {
                     "error": "Query execution failed without a specific error message."
                 }

@@ -147,7 +147,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
       ) : (
         <div className="pt-[80px]">
           <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
-            Tell us more about your <span className="text-custom-blue">trip..</span>
+            Tell us more about your <span className="text-custom-light-blue">trip..</span>
           </div>
           <div className="pl-4 pr-6 pt-2 md:pl-6">
             Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt amet
