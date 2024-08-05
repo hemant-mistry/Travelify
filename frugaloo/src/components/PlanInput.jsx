@@ -140,12 +140,12 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
   return (
     <>
       {loading ? (
-        <div className="text-center items-center md:mt-[180px] sm:mt-[150px] text-primary text-xl">
+        <div className="text-center items-center md:pt-[200px] pt-[250px] text-primary text-xl">
           <Lottie options={defaultOptions} height={100} width={100} />
           {loadingMessages[loadingMessageIndex]}
         </div>
       ) : (
-        <div className="pt-[70px]">
+        <div className="pt-[80px]">
           <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
             Tell us more about your <span className="text-custom-blue">trip..</span>
           </div>
@@ -206,7 +206,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
                   step="50"
                   onChange={handleBudgetChange}
                 />
-                <div className="flex w-full justify-between px-2 text-xs md:text-sm mt-3">
+                <div className="flex w-full justify-between px-2 text-xs md:text-sm mt-3 ">
                   <span>Frugal</span>
                   <span>Moderate</span>
                   <span>Expensive</span>
@@ -214,7 +214,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
               </label>
             </div>
             <br />
-            <div className="divider"></div>
+
             <button
               onClick={handleSubmit}
               className="btn btn-sm mt-3"

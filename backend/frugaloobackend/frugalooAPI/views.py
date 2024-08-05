@@ -332,6 +332,53 @@ class FetchTripDetails(APIView):
             )
 
 
+
+class GetPhotosForLocations(APIView):
+    def post(self, request):
+        try:
+            locations = request.data.get('locations', [])
+            photo_map = {}
+
+            if not locations:
+                return Response({'error': 'No locations provided'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Fetch photos for each location
+            for location in locations:
+                location_name = location.get('stay_details')
+                if location_name:
+                    photo_reference = self.get_photo_reference(location_name)
+                    if photo_reference:
+                        photo_map[location_name] = photo_reference
+
+            return Response(photo_map)
+        
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get_photo_reference(self, location_name):
+        url = 'https://places.googleapis.com/v1/places:searchText'
+        headers = {
+            'X-Goog-Api-Key': os.environ.get("GOOGLE_PLACES"),
+            'X-Goog-FieldMask': 'places.displayName,places.photos',
+        }
+        body = {
+            'textQuery': location_name,
+            'pageSize': 1
+        }
+
+        response = requests.post(url, headers=headers, json=body)
+        response_data = response.json()
+
+        if response_data.get('places'):
+            photos = response_data['places'][0].get('photos', [])
+            if photos:
+                photo_reference = photos[0]['name'].split('/photos/')[1]
+                return photo_reference
+
+        return None
+
+
+
 class FetchPlan(APIView):
     """
     API view to fetch the generated plan for a specific trip.

@@ -12,6 +12,7 @@ from .views import (
     GeminiSuggestions,
     UpdateTrip,
     GenerateMessageView,
+    GetPhotosForLocations
 )
 
 router = routers.DefaultRouter()
@@ -32,4 +33,5 @@ urlpatterns = [
     path("update-plan/", UpdateTrip.as_view(), name="update-plan"),
     path("add-finance-log/", AddFinanceLog.as_view(), name="add_finance_log"),
     path("generate-message/", GenerateMessageView.as_view(), name="generate-message"),
+     path('get-photos-for-locations/', GetPhotosForLocations.as_view(), name='get_photos_for_locations'),
 ]

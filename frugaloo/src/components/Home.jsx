@@ -16,28 +16,22 @@ function Home() {
 
   return (
     <>
-      {/* Travelify Hero Section */}
-      <div className="hero min-h-screen">
-        <div className="flex flex-col md:flex-row items-center justify-between w-full pt-10 md:pt-0 md:pl-10">
-          <div className="hero-content flex flex-col items-center md:items-start text-center max-w-lg md:w-1/2">
-            <h1 className="mb-5 text-5xl font-bold text-white text-center md:text-left md:ml-10">
+      <div className="hero">
+        <div className="hero-inner">
+          <div className="hero-content md:pl-[55px]">
+            <h1>
               Welcome to <br /> Travelify
             </h1>
-            <p className="text-white text-center mb-5 md:text-left md:mb-5 md:ml-10">
-              Travel planning just got a whole lot exciting!
-            </p>
-            <button
-              className="flex items-center justify-center px-14 py-3 gap-2 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-900 rounded-lg text-white rounded-[15px] md:self-start md:ml-10"
-              onClick={handleGetStartedClick}
-            >
-              Get Started
-            </button>
+            <p>Travel planning just got a whole lot exciting!</p>
+            <div className="button-container ">
+              <button onClick={handleGetStartedClick}>Get Started</button>
+            </div>
           </div>
-          <div className="flex justify-center items-center w-full md:w-1/2">
+          <div className="hero-image-container">
             <img
               src={heroImage}
               alt="Travel Illustration"
-              className="max-sm:hidden md:block md:w-[400px] lg:block"
+              className="hero-image"
             />
           </div>
         </div>
@@ -131,109 +125,138 @@ function Home() {
       <br />
       {/* Travelify Quick Guide section */}
       <div className="px-4 sm:px-6 lg:px-8">
-  <div className="text-center text-3xl sm:text-4xl lg:text-5xl">Quick Start Guide</div>
-  <ul className="timeline timeline-vertical mt-6 sm:mt-8 lg:mt-10">
-    <li>
-      <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">
-        Login Or Create your account
+        <div className="text-center text-3xl sm:text-4xl lg:text-5xl">
+          Quick Start Guide
+        </div>
+        <ul className="timeline timeline-vertical mt-6 sm:mt-8 lg:mt-10">
+          <li>
+            <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">
+              Login Or Create your account
+            </div>
+            <div className="timeline-middle">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
+              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
+              duis dolor. Congue suspendisse aliquam ut egestas duis dolor.
+              Congue suspendisse consectetur adipiscing elit. At sit ut nulla eu
+              stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor.
+              Congue suspendisse aliquam ut egestas duis dolor. Congue
+              suspendiss consectetur adipiscing elit.
+            </div>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+          </li>
+
+          <li>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+            <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">
+              Click on Get Started
+            </div>
+            <div className="timeline-middle">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
+              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
+              duis dolor. Congue suspendisse aliquam ut egestas duis dolor.
+            </div>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+          </li>
+          <li>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+            <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">
+              Enter your plan details
+            </div>
+            <div className="timeline-middle">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
+              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
+              duis dolor. r adipiscing elit. At sit ut nulla eu stetur eget.
+              Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue
+              suspendisse aliquam ut egestas duis dolor. Congue suspendiss
+              consectetur adipiscing elit.
+            </div>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+          </li>
+          <li>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+            <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">
+              Build Itinerary
+            </div>
+            <div className="timeline-middle">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
+              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
+              duis dolor. r adipiscing elit. At sit ut nulla eu stetur eget.
+              Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue
+              suspendisse aliquam ut egestas duis dolor. Congue suspendiss
+              consectetur adipiscing elit.
+            </div>
+            <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
+          </li>
+        </ul>
       </div>
-      <div className="timeline-middle">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="h-4 w-4 sm:h-5 sm:w-5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </div>
-      <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue suspendisse aliquam ut egestas duis dolor. Congue suspendisse consectetur adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue suspendisse aliquam ut egestas duis dolor. Congue suspendiss consectetur adipiscing elit.
-      </div>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-    </li>
-    
-    <li>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-      <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">Click on Get Started</div>
-      <div className="timeline-middle">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="h-4 w-4 sm:h-5 sm:w-5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </div>
-      <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue suspendisse aliquam ut egestas duis dolor.
-      </div>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-    </li>
-    <li>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-      <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">Enter your plan details</div>
-      <div className="timeline-middle">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="h-4 w-4 sm:h-5 sm:w-5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </div>
-      <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. r adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue suspendisse aliquam ut egestas duis dolor. Congue suspendiss consectetur adipiscing elit.
-      </div>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-    </li>
-    <li>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-      <div className="timeline-start text-xl sm:text-2xl lg:text-3xl font-lato mr-3 sm:mr-4 lg:mr-5">Build Itinerary</div>
-      <div className="timeline-middle">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="h-4 w-4 sm:h-5 sm:w-5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </div>
-      <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. r adipiscing elit. At sit ut nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue suspendisse aliquam ut egestas duis dolor. Congue suspendiss consectetur adipiscing elit.
-      </div>
-      <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto"/>
-    </li>
-  </ul>
-</div>
 
       <br />
       <br />
       <br />
       <footer className="footer footer-center bg-base-300 text-base-content p-4">
-  <aside>
-    <p>Copyright © {new Date().getFullYear()} - All right reserved by Travelify</p>
-  </aside>
-</footer>
+        <aside>
+          <p>
+            Copyright © {new Date().getFullYear()} - All right reserved by
+            Travelify
+          </p>
+        </aside>
+      </footer>
     </>
   );
 }
