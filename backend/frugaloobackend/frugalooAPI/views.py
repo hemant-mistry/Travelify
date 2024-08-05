@@ -1269,12 +1269,13 @@ class GenerateMessageView(APIView):
 
         # Query Supabase with the SQL response
         query_result = self.execute_sql_query(sql_response)
+        print(query_result)
         # Log the message and response asynchronously
         self.log_message_sync(user_id, message, sql_response)
 
         # Generate insights using Gemini
         insights_model_generation_config = {
-            "temperature": 0.6,
+            "temperature": 0.7,
             "top_p": 0.95,
             "top_k": 64,
             "max_output_tokens": 8192,
@@ -1282,7 +1283,7 @@ class GenerateMessageView(APIView):
         }
 
         insights_model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-1.5-pro",
             generation_config=insights_model_generation_config,
             # safety_settings = Adjust safety settings
             # See https://ai.google.dev/gemini-api/docs/safety-settings

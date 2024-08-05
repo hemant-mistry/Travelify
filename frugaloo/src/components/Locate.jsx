@@ -64,7 +64,7 @@ function Locate({ dayData = [], loggedInUser }) {
       setTimeout(() => {
         setShowSuccessAnimation(false);
         setFormSubmitting(false);
-      }, 3000);
+      }, 2000);
     } catch (error) {
       console.error("Error submitting data:", error);
       alert("Failed to submit data.");

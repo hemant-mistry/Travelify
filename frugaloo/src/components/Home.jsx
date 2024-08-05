@@ -83,10 +83,10 @@ function Home() {
           <div className="card-body flex flex-col items-center justify-center">
             <h2 className="card-title text-center">Itinerary Builder</h2>
             <p className="text-center w-[200px] text-custom-gray">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut sed
-              viverra faucibus ac imperdiet pellentesque. Sit purus augue arcu
-              quam orci. Et tortor, gravida libero et amet. Pretium commodo,
-              odio viverra
+              Effortlessly plan your trip with Travelify’s Itinerary Builder.
+              Choose your destination, dates, and budget to create personalized
+              itineraries. Enjoy interactive maps and tailor your journey with
+              activities, dining, and more!
             </p>
           </div>
         </div>
@@ -97,10 +97,10 @@ function Home() {
           <div className="card-body flex flex-col items-center justify-center">
             <h2 className="card-title text-center">Dynamic Switch</h2>
             <p className="text-center w-[200px] text-custom-gray">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut sed
-              viverra faucibus ac imperdiet pellentesque. Sit purus augue arcu
-              quam orci. Et tortor, gravida libero et amet. Pretium commodo,
-              odio viverra
+              With Travelify's Dynamic Itinerary Changes, powered by Gemini AI,
+              easily adjust your travel plans in real time. Enjoy the
+              flexibility to tweak your itinerary and explore the world with
+              confidence!
             </p>
           </div>
         </div>
@@ -111,10 +111,10 @@ function Home() {
           <div className="card-body flex flex-col items-center justify-center">
             <h2 className="card-title text-center">Finance AI</h2>
             <p className="text-center w-[200px] text-custom-gray">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut sed
-              viverra faucibus ac imperdiet pellentesque. Sit purus augue arcu
-              quam orci. Et tortor, gravida libero et amet. Pretium commodo,
-              odio viverra
+              Manage your travel budget effortlessly with Travelify's My Finance
+              feature. Track expenses by category, view detailed breakdowns, and
+              compare daily and trip costs. Make smarter financial choices with
+              ease on every journey!
             </p>
           </div>
         </div>
