@@ -59,15 +59,12 @@ function Trip({ loggedInUser }) {
         My Itineraries
       </div>
       <div className="text-sm md:text-sm pl-4 mt-2 md:pl-6">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint et tempore
-        cumque quaerat sequi blanditiis facilis impedit fugiat.
+        You’ll find all your saved trips neatly organized. Easily view, manage,
+        and refine your travel plans in one convenient place.
       </div>
       <div className="flex flex-wrap justify-center md:justify-start gap-6 md:ml-[6rem] md:mt-5">
         {tripDetails.map((trip, index) => (
-          <div
-            key={index}
-            className="w-full sm:w-1/2 md:w-1/3 p-4 max-w-xs"
-          >
+          <div key={index} className="w-full sm:w-1/2 md:w-1/3 p-4 max-w-xs">
             <div className="card bg-[#0e1111] shadow-xl rounded-[40px] h-[400px] flex flex-col">
               <figure className="relative h-40">
                 {photoMap[trip.stay_details] ? (
@@ -92,16 +89,15 @@ function Trip({ loggedInUser }) {
                   </div>
                 )}
               </figure>
-              
+
               <div className="card-body text-sm text-center">
-              
-                  <h2 className="card-title text-md font-lato mx-auto">
-                    {trip.stay_details}
-                  </h2>
-                  <p className="font-lato text-custom-gray">
-                    {trip.places_descriptions}
-                  </p>
-              
+                <h2 className="card-title text-md font-lato mx-auto">
+                  {trip.stay_details}
+                </h2>
+                <p className="font-lato text-custom-gray">
+                  {trip.places_descriptions}
+                </p>
+
                 <div className="card-actions justify-end mt-2">
                   <button
                     className="btn btn-active btn-link text-custom-gray text-md p-0"

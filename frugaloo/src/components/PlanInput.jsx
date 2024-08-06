@@ -138,7 +138,8 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
     } catch (error) {
       console.error("There was an error saving the trip details!", error);
       // Randomize error message
-      const randomErrorMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
+      const randomErrorMessage =
+        errorMessages[Math.floor(Math.random() * errorMessages.length)];
       setError(randomErrorMessage);
     } finally {
       // Set the final loading message index
@@ -162,7 +163,7 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
         </div>
       ) : (
         <>
-        {error && (
+          {error && (
             <div
               id="error-modal"
               className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-75 z-50"
@@ -193,7 +194,10 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
                     ></path>
                   </svg>
                 </button>
-                <h3 className="text-lg font-semibold text-white mt-[-15px]" id="modal-title">
+                <h3
+                  className="text-lg font-semibold text-white mt-[-15px]"
+                  id="modal-title"
+                >
                   Ran into a problem
                 </h3>
                 <p className="mt-2 text-sm text-custom-gray">{error}</p>
@@ -207,86 +211,94 @@ function PlanInput({ loggedInUser, budget, setBudget }) {
               </div>
             </div>
           )}
-        <div className="pt-[80px]">
-          <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
-            Tell us more about your <span className="text-custom-light-blue">trip..</span>
-          </div>
-          <div className="pl-4 pr-6 pt-2 md:pl-6">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt amet
-            quaerat aliquam tempora ducimus
-          </div>
-          <div className="p-6">
-            <div>
-              <label className="form-control w-full max-w-xs">
-                <div className="label">
-                  <span className="label-text text-sm md:text-sm text-white">
-                    Where are you planning to go?
-                  </span>
-                </div>
-                <input
-                  type="text"
-                  value={stayDetails}
-                  onChange={(e) => setStayDetails(e.target.value)}
-                  placeholder="Type here"
-                  className="input input-bordered w-full max-w-xs input-sm md:input-sm"
-                />
-              </label>
+          <div className="pt-[80px]">
+            <div className="text-2xl md:text-3xl font-bold pl-4 md:pl-6">
+              Ready to map out your {" "}
+              <span className="text-custom-light-blue">next journey </span>
             </div>
-            <br />
-            <div>
-              <label className="form-control w-full max-w-sm md:max-w-lg">
-                <div className="label">
-                  <span className="label-text text-sm md:text-sm text-white">
-                    How many days are you planning to visit?
-                  </span>
-                </div>
-                <Datepicker
-                  value={value}
-                  onChange={handleValueChange}
-                  inputClassName={"input input-bordered w-full h-8"}
-                />
-              </label>
-            </div>
-            <br />
-            <div>
-              <label className="form-control w-full max-w-sm">
-                <div className="label">
-                  <span className="label-text text-sm md:text-sm text-white">
-                    How much do you think you'll spend?
-                  </span>
-                </div>
-                <p className="text-neutral-content text-xs pl-1">
-                  Based on the budget preferences we will suggest your
-                  restaurants
-                </p>
-                <input
-                  type="range"
-                  min={0}
-                  max="100"
-                  value={(budget - 1) * 50}
-                  className="range range-sm mt-5"
-                  step="50"
-                  onChange={handleBudgetChange}
-                />
-                <div className="flex w-full justify-between px-2 text-xs md:text-sm mt-3 ">
-                  <span>Frugal</span>
-                  <span>Moderate</span>
-                  <span>Expensive</span>
-                </div>
-              </label>
-            </div>
-            <br />
+            <div className="pl-4 pr-6 pt-2 md:pl-6">
+            Get started by entering your destination, travel dates, and budget to craft your ideal itinerary!
 
-            <button
-              onClick={handleSubmit}
-              className="btn btn-sm mt-3"
-              disabled={loading}
-            >
-              <img src={geminiIcon} alt="Login Icon" className="h-4 w-4" />
-              Build Itinerary
-            </button>
+            </div>
+            <div className="p-6">
+              <div>
+                <label className="form-control w-full max-w-xs">
+                  <div className="label">
+                    <span className="label-text text-sm md:text-sm text-white">
+                    Where will your next adventure take you?
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={stayDetails}
+                    onChange={(e) => setStayDetails(e.target.value)}
+                    placeholder="Type here"
+                    className="input input-bordered w-full max-w-xs input-sm md:input-sm"
+                  />
+                </label>
+              </div>
+              <br />
+              <div>
+                <label className="form-control w-full max-w-sm md:max-w-lg">
+                  <div className="label">
+                    <span className="label-text text-sm md:text-sm text-white">
+                    How long will you be exploring?
+                    </span>
+                  </div>
+                  <Datepicker
+                    value={value}
+                    onChange={handleValueChange}
+                    inputClassName={"input input-bordered w-full h-8"}
+                  />
+                </label>
+              </div>
+              <br />
+              <div>
+                <label className="form-control w-full max-w-sm">
+                  <div className="label">
+                    <span className="label-text text-sm md:text-sm text-white">
+                    What’s your travel budget like?
+                    </span>
+                  </div>
+                  <p className="text-neutral-content text-xs pl-1">
+                    Based on the budget preferences we will suggest your
+                    restaurants
+                  </p>
+                  <input
+                    type="range"
+                    min={0}
+                    max="100"
+                    value={(budget - 1) * 50}
+                    className="range range-sm mt-5"
+                    step="50"
+                    onChange={handleBudgetChange}
+                  />
+                  <div className="flex w-full justify-between px-2 text-xs md:text-sm mt-3 ">
+                  <div className="tooltip tooltip-right " data-tip="Great value for your money">
+
+                    <span>Budget-Savvy</span>
+                    </div>
+                    <div className="tooltip tooltip-bottom " data-tip="Perfect balance of cost and quality.">
+                    <span>Sweet Spot</span>
+                    </div>
+                    <div className="tooltip tooltip-bottom " data-tip="Premium experiences without compromise.">
+                    <span>Treat Yourself</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <br />
+
+              <button
+                onClick={handleSubmit}
+                className="btn btn-sm mt-3"
+                disabled={loading}
+              >
+                <img src={geminiIcon} alt="Login Icon" className="h-4 w-4" />
+                Build Itinerary
+              </button>
+            </div>
           </div>
-        </div>
         </>
       )}
     </>

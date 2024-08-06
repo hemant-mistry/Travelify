@@ -27,7 +27,6 @@ function PromptInput({ loggedInUser }) {
     adjustHeight();
   }, [message]);
 
-
   useEffect(() => {
     // Clear chat history on component mount
     sessionStorage.removeItem("chat_history");
@@ -36,9 +35,9 @@ function PromptInput({ loggedInUser }) {
   const initializeChatHistory = () => {
     const chatHistory = JSON.parse(sessionStorage.getItem("chat_history")) || {
       contents: [
-        { "role": "user", "parts": [] },
-        { "role": "model", "parts": [] }
-      ]
+        { role: "user", parts: [] },
+        { role: "model", parts: [] },
+      ],
     };
     sessionStorage.setItem("chat_history", JSON.stringify(chatHistory));
   };
@@ -46,63 +45,63 @@ function PromptInput({ loggedInUser }) {
     // Get the current chat history or initialize an empty array
     const chatHistory = JSON.parse(sessionStorage.getItem("chat_history")) || {
       contents: [
-        { role: "user", "parts": [] },
-        { role: "model", "parts": [] }
-      ]
+        { role: "user", parts: [] },
+        { role: "model", parts: [] },
+      ],
     };
-  
+
     console.log("Before Update:", chatHistory);
-  
+
     // Add the new message to the appropriate role
     const roleIndex = chatHistory.contents.findIndex(
       (entry) => entry.role === role
     );
-  
+
     if (roleIndex !== -1) {
       chatHistory.contents[roleIndex].parts.push({ text: message });
     }
-  
+
     console.log("After Update:", chatHistory);
-  
+
     sessionStorage.setItem("chat_history", JSON.stringify(chatHistory));
   };
   const handleSendMessage = async () => {
     if (message.trim() === "" && !isFirstMessage) {
       return;
     }
-  
+
     setIsFirstMessage(false);
     setLoading(true);
-  
+
     const newMessage = message.trim();
-  
+
     setMessages((prevMessages) => [
       ...prevMessages,
       { type: "user", text: newMessage },
       { type: "response", text: "" },
     ]);
-  
+
     // Save the user's message to chat history
     updateChatHistory(newMessage, "user");
-  
+
     try {
       const chatHistory = isFirstMessage
         ? [] // Send an empty array if it's the first message
         : JSON.parse(sessionStorage.getItem("chat_history")) || [];
-  
+
       console.log("Chat history:", chatHistory);
-  
+
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}generate-message/`,
         {
           user_id: loggedInUser.id,
           message: newMessage,
-          chat_history: JSON.stringify(chatHistory) // Ensure chat history is a JSON string
+          chat_history: JSON.stringify(chatHistory), // Ensure chat history is a JSON string
         }
       );
-  
+
       console.log("Response Data:", response.data);
-  
+
       const {
         visual_response,
         sql_response,
@@ -110,9 +109,9 @@ function PromptInput({ loggedInUser }) {
         react_component,
         insights,
       } = response.data;
-  
+
       const cleanedVisualResponse = visual_response.trim();
-  
+
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages];
         const responseIndex = updatedMessages.findIndex(
@@ -130,7 +129,7 @@ function PromptInput({ loggedInUser }) {
         }
         return updatedMessages;
       });
-  
+
       // Save the model's response to chat history
       updateChatHistory(response.data.insights || "", "model");
     } catch (error) {
@@ -138,16 +137,22 @@ function PromptInput({ loggedInUser }) {
     } finally {
       setLoading(false);
     }
-  
+
     setMessage("");
   };
-  
+  useEffect(() => {
+    if (message.trim() !== "") {
+      handleSendMessage();
+    }
+  }, [message]);
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
+
+
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -157,45 +162,48 @@ function PromptInput({ loggedInUser }) {
   };
 
   const button1Text =
-    "Suggest European cities for history, nightlife, and nature.";
+    "Can you give me a comparison of my spendings for all my trips";
   const button2Text =
-    "Plan a $2000 week-long Japan trip, including flights, stay, food, and activities.";
-  const button3Text =
-    "Create a 10-day Southeast Asia itinerary for Thailand, Vietnam, and Cambodia.";
-  const button4Text =
-    "What should I pack for a two-week trip to New Zealand in November?";
+    "Show me the cost breakdown for my trips based on categories";
+  const button3Text = "Can you show me the place where I spent the most";
 
   const truncateText = (text, maxLength) => {
     return text.length > maxLength
       ? text.substring(0, maxLength) + "..."
       : text;
   };
-
+  const handleButtonClick = (buttonText) => {
+    setMessage(buttonText);
+  };
   return (
     <>
       {isFirstMessage ? (
         <div className="flex flex-col pt-[80px]">
           <div className="flex flex-col text-center mx-auto w-full max-w-2xl">
-            <h1 className="lg:text-5xl sm:text-5xl font-bold">
-              Welcome back!
-            </h1>
+            <h1 className="lg:text-5xl sm:text-5xl font-bold">Welcome back!</h1>
             <p className="py-6 lg:text-lg sm:text-lg">
-              Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda
-              excepturi exercitationem quasi. In deleniti eaque aut repudiandae
-              et a id nisi.
+              Get to know how you spent on your trip with the help of Finance
+              AI. <br></br>
+              Select one of the prompts mentioned below to get started.
             </p>
             <div className="suggested-prompts flex justify-center gap-4 flex-wrap">
-              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+              <button
+                className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md"
+                onClick={() => handleButtonClick(button1Text)}
+              >
                 {truncateText(button1Text, 60)}
               </button>
-              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+              <button
+                className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md "
+                onClick={() => handleButtonClick(button2Text)}
+              >
                 {truncateText(button2Text, 60)}
               </button>
-              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
+              <button
+                className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md"
+                onClick={() => handleButtonClick(button3Text)}
+              >
                 {truncateText(button3Text, 60)}
-              </button>
-              <button className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md">
-                {truncateText(button4Text, 60)}
               </button>
             </div>
           </div>
