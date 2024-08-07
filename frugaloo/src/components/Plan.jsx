@@ -8,6 +8,7 @@ import TickConfirmation from "../assets/TickConfirmation.png";
 import DiscardConfirmation from "../assets/DiscardConfirmation.png";
 import animationData from "../assets/lotties/gemini.json";
 import geminiData from "../assets/lotties/gemini-logo.json";
+import promptGuide from "../assets/promptGuide.png";
 import Lottie from "react-lottie";
 function Plan({ loggedInUser, onLocateClick, budget }) {
   const defaultOptions = {
@@ -125,7 +126,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
     }
   };
 
- const handleAskGeminiClick = async (day) => {
+  const handleAskGeminiClick = async (day) => {
     setModalLoading(true);
     setError(""); // Clear previous error message
     setRetryCountdown(5); // Set countdown for 5 seconds
@@ -190,7 +191,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
   };
 
   const handleSuggestionClick = async () => {
-    setUserChanges("")
+    setUserChanges("");
     setSuggestionLoading(true);
     setPlanDetails(newPlan);
     console.log("newplan", JSON.stringify(newPlan));
@@ -390,18 +391,39 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                                     </div>
                                     {error ? (
                                       <div className="text-red-500 text-center mt-4">
-                                      {error} {retryCountdown > 0 && `Retry in ${retryCountdown} seconds`}
+                                        {error}{" "}
+                                        {retryCountdown > 0 &&
+                                          `Retry in ${retryCountdown} seconds`}
                                       </div>
                                     ) : (
-                                      <div className="text-center">
-                                        <textarea
-                                          className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
-                                          rows={5}
-                                          placeholder="Describe the changes you want to make in the Itinerary..."
-                                          onChange={(e) =>
-                                            setUserChanges(e.target.value)
-                                          }
-                                        ></textarea>
+                                      <div className="text-center relative w-full max-w-md mx-auto mt-5">
+                                        <div className="relative">
+                                          <textarea
+                                            className="textarea textarea-bordered w-full"
+                                            rows={5}
+                                            placeholder="Describe the changes you want to make in the Itinerary..."
+                                            onChange={(e) =>
+                                              setUserChanges(e.target.value)
+                                            }
+                                            style={{ paddingBottom: "3rem" }} // Adding padding to the bottom for space
+                                          ></textarea>
+                                          <div className="absolute bottom-2 right-2">
+                                            <button
+                                              className="btn btn-sm btn-ghost flex items-center"
+                                              onClick={() => {
+                                                document
+                                                  .getElementById("my_prompt_guide_modal")
+                                                  .showModal();
+                                              }}
+                                            >
+                                              <img
+                                                src={promptGuide}
+                                                alt="Prompt Guide Icon"
+                                                className="h-4 w-4"
+                                              />
+                                            </button>
+                                          </div>
+                                        </div>
                                         <button
                                           className="btn btn-outline btn-primary btn-sm mt-5"
                                           onClick={() =>
@@ -419,7 +441,71 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                           </div>
                         </dialog>
                       </>
+                     
+                      <dialog id="my_prompt_guide_modal" className="modal">
+                        <div className="modal-box">
+                          <form method="dialog">
+                            {/* if there is a button in form, it will close the modal */}
+                            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                              ✕
+                            </button>
+                          </form>
+                          <h3 className="font-bold text-lg">Prompt Guide</h3>
+                          <p className="py-4 text-sm">
+                            Below are some of the prompts highlighting various capabilities...
+                          </p>
+                          <ul>
+                          <p className="py-2 text-md">
+                            <u>Change itinerary based on theme</u>
+                          </p>
+  
 
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to art
+                          </li>
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to culture
+                          </li>
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to culinary experiences
+                          </li>
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to family
+                          </li>
+
+                          <p className="py-2 text-md">
+                           <u>Change itinerary based on food choice</u> 
+                          </p>
+                          <li className="text-sm">
+                          - Recommend street food for evening
+                          </li>
+                          <li className="text-sm">
+                          - Recommend an Ice cream shop to end the day.
+                          </li>
+                          <li className="text-sm">
+                          - Recommend a dessert shop.
+                          </li>
+                          <li className="text-sm">
+                          - Change cuisine of the restaurants to indian, italian and lebanese
+                          </li>
+                          <p className="py-2 text-md">
+                            <u>Add activities based on your mood</u>
+                          </p>
+                          <li className="text-sm">
+                          - Add a trip to a bowling alley.
+                          </li>
+                          <li className="text-sm">
+                          - Recommend some nightclub.
+                          </li>
+                          <li className="text-sm">
+                          - Recommend some beach activites
+                          </li>
+                          
+                          <p className="py-3 text-sm">If that's not sufficient, you can also adjust an entire day of the itinerary or even the entire itinerary.</p>
+
+                          </ul>
+                        </div>
+                      </dialog>
                       <button
                         className="btn btn-xs md:btn-sm bg-base-200"
                         onClick={() =>

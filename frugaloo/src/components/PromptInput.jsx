@@ -134,25 +134,24 @@ function PromptInput({ loggedInUser }) {
       updateChatHistory(response.data.insights || "", "model");
     } catch (error) {
       console.error("Error sending message:", error);
+      // Handle error by setting a default message
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { type: "response", text: "Sorry, ran into a problem try refreshing." },
+      ]);
     } finally {
       setLoading(false);
     }
 
     setMessage("");
   };
-  useEffect(() => {
-    if (message.trim() !== "") {
-      handleSendMessage();
-    }
-  }, [message]);
+
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
-
-
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -165,7 +164,7 @@ function PromptInput({ loggedInUser }) {
     "Can you give me a comparison of my spendings for all my trips";
   const button2Text =
     "Show me the cost breakdown for my trips based on categories";
-  const button3Text = "Can you show me the place where I spent the most";
+  const button3Text = "Can you show me the place where I spent the most";   
 
   const truncateText = (text, maxLength) => {
     return text.length > maxLength
@@ -174,6 +173,7 @@ function PromptInput({ loggedInUser }) {
   };
   const handleButtonClick = (buttonText) => {
     setMessage(buttonText);
+
   };
   return (
     <>
@@ -189,7 +189,7 @@ function PromptInput({ loggedInUser }) {
             <div className="suggested-prompts flex justify-center gap-4 flex-wrap">
               <button
                 className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md"
-                onClick={() => handleButtonClick(button1Text)}
+                onClick={() => handleButtonClick("Can you give me a comparison of my spendings for all my trips")}
               >
                 {truncateText(button1Text, 60)}
               </button>

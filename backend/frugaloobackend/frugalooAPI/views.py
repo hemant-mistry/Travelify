@@ -1204,6 +1204,7 @@ class GenerateMessageView(APIView):
     def post(self, request):
         user_id = request.data.get("user_id")
         message = request.data.get("message")
+        print("Empty",message)
         chat_history = request.data.get("chat_history")
         chat_history = json.loads(chat_history)
         if (len(chat_history)) != 0:
