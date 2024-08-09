@@ -3,12 +3,14 @@ import geminiIcon from "../assets/GeminiIcon.png";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import TickConfirmation from "../assets/TickConfirmation.png";
 import DiscardConfirmation from "../assets/DiscardConfirmation.png";
 import animationData from "../assets/lotties/gemini.json";
 import geminiData from "../assets/lotties/gemini-logo.json";
+import promptGuide from "../assets/promptGuide.png";
 import Lottie from "react-lottie";
-function Plan({ loggedInUser }) {
+function Plan({ loggedInUser, onLocateClick, budget }) {
   const defaultOptions = {
     loop: true,
     autoplay: true,
@@ -26,6 +28,7 @@ function Plan({ loggedInUser }) {
       preserveAspectRatio: "xMidYMid Slice",
     },
   };
+  const navigate = useNavigate();
   const { tripId } = useParams();
   const [planDetails, setPlanDetails] = useState([]); // State to hold fetched plan details
   const [loading, setLoading] = useState(false);
@@ -37,6 +40,10 @@ function Plan({ loggedInUser }) {
   const [suggestionsModal, setSuggestionsModal] = useState(false);
   const [newPlan, setNewPlan] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
+  const [suggestionloading, setSuggestionLoading] = useState(false);
+  const [error, setError] = useState(""); // State to hold error message
+  const [errorTimeout, setErrorTimeout] = useState(null);
+  const [retryCountdown, setRetryCountdown] = useState(0); // State for countdown
 
   useEffect(() => {
     // Function to fetch plan details based on tripId
@@ -47,33 +54,15 @@ function Plan({ loggedInUser }) {
           `${import.meta.env.VITE_BACKEND_URL}fetch-plan/`,
           { trip_id: tripId }
         );
-        let generatedPlanString = response.data.generated_plan;
-        if (
-          generatedPlanString[0] !== "[" &&
-          generatedPlanString[generatedPlanString.length - 1] !== "]"
-        ) {
-          generatedPlanString = `[${generatedPlanString}]`;
-        }
 
-        generatedPlanString = generatedPlanString.replace(/}, {/g, "},{");
-
-        // Parse the plan details string into an array of objects
-        const parsedPlanDetails = JSON.parse(generatedPlanString);
-        console.log("Parsed", parsedPlanDetails);
-
-        // Extract changes from the plan details
-        const changes =
-          parsedPlanDetails.find((item) => item.changes)?.changes || "";
-        setPlanChanges(changes);
-        console.log("Changes:", changes);
-
-        // Filter out the changes from the plan details
-        const filteredPlanDetails = parsedPlanDetails.filter(
-          (item) => !item.changes
-        );
-        setPlanDetails(filteredPlanDetails);
+        const outerData = response.data;
+        const innerDataString = outerData.generated_plan;
+        const generated_plan = JSON.parse(innerDataString);
+        const parsedPlanDetails = Object.values(generated_plan);
+        setPlanDetails(parsedPlanDetails);
       } catch (error) {
         console.error("Error fetching plan details:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -98,9 +87,20 @@ function Plan({ loggedInUser }) {
     fetchPlanProgress();
   }, [tripId]);
 
-  const handleLocateClick = (location) => {
-    const url = `https://maps.google.com/?q=${location}`;
-    window.open(url, "_blank");
+  // Countdown effect
+  useEffect(() => {
+    if (retryCountdown > 0) {
+      const timer = setInterval(() => {
+        setRetryCountdown((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [retryCountdown]);
+
+  const handleLocateClick = (dayData, dayIndex, trip_id) => {
+    onLocateClick(dayData); // Pass day data to parent
+
+    navigate(`/locate/${trip_id}/${dayIndex + 1}`);
   };
 
   const handleConfirmClick = async (day) => {
@@ -128,51 +128,73 @@ function Plan({ loggedInUser }) {
 
   const handleAskGeminiClick = async (day) => {
     setModalLoading(true);
+    setError(""); // Clear previous error message
+    setRetryCountdown(5); // Set countdown for 5 seconds
+
+    if (errorTimeout) {
+      clearTimeout(errorTimeout);
+      setErrorTimeout(null);
+    }
+
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}gemini-suggestions/`,
         {
+          trip_id: tripId,
           current_day: day,
           original_plan: planDetails,
           user_changes: userChanges,
+          budget: budget,
         }
       );
-      console.log(response.data);
-      let generatedPlanString = response.data.response_data;
-      if (
-        generatedPlanString[0] !== "[" &&
-        generatedPlanString[generatedPlanString.length - 1] !== "]"
-      ) {
-        generatedPlanString = `[${generatedPlanString}]`;
-      }
 
-      generatedPlanString = generatedPlanString.replace(/}, {/g, "},{");
+      const outerData =
+        typeof response.data === "string"
+          ? JSON.parse(response.data)
+          : response.data;
 
-      // Parse the plan details string into an array of objects
-      const parsedPlanDetails = JSON.parse(generatedPlanString);
-      console.log("Parsed", parsedPlanDetails);
+      const innerDataString = outerData.response_data;
+      const parsedPlanDetailsRaw =
+        typeof innerDataString === "string"
+          ? JSON.parse(innerDataString)
+          : innerDataString;
 
-      // Extract changes from the plan details
-      const changes =
-        parsedPlanDetails.find((item) => item.changes)?.changes || "";
+      const changes = parsedPlanDetailsRaw.changes || "";
       setPlanChanges(changes);
 
-      // Filter out the changes from the plan details
-      const filteredPlanDetails = parsedPlanDetails.filter(
-        (item) => !item.changes
-      );
-      setNewPlan(filteredPlanDetails);
+      const new_plan = parsedPlanDetailsRaw.generated_plan || "";
+      const parsedPlanDetails = Object.values(new_plan);
+
+      setNewPlan(parsedPlanDetails);
       setSuggestionsModal(true);
-      setModalLoading(false);
     } catch (error) {
       console.error("Error fetching the original plan", error);
+      setError(
+        "There was an error fetching the suggestions. Please try again."
+      );
+
+      const timeoutId = setTimeout(() => {
+        setError("");
+        setRetryCountdown(5); // Reset countdown when the error message disappears
+      }, 5000);
+
+      setErrorTimeout(timeoutId);
+    } finally {
       setModalLoading(false);
     }
   };
 
-  const handleSuggestionClick = async () => {
-    setPlanDetails(newPlan);
+  const handleDiscardClick = () => {
+    setNewPlan("");
+    setSuggestionsModal(false);
+    document.getElementById("my_modal_5").close();
+  };
 
+  const handleSuggestionClick = async () => {
+    setUserChanges("");
+    setSuggestionLoading(true);
+    setPlanDetails(newPlan);
+    console.log("newplan", JSON.stringify(newPlan));
     //Updating the trip info in the database
     try {
       const response = await axios.post(
@@ -182,178 +204,226 @@ function Plan({ loggedInUser }) {
           new_plan: newPlan,
         }
       );
-
-      console.log(response);
     } catch (error) {
       console.error("Error fetching the original plan", error);
     }
 
     document.getElementById("my_modal_5").close();
+    setSuggestionLoading(false);
     setSuggestionsModal(false);
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center mt-[300px] text-primary">
-        <span className="loading loading-spinner loading-lg mr-5"></span>
-        Loading itinerary..
+      <div className="flex justify-center items-center pt-[300px] font-lato">
+        <span className="loading loading-spinner loading-lg mr-5 text-custom-blue"></span>
+        Loading Itinerary..
       </div>
     );
   }
 
   return (
     <>
-      <div className="text-center font-bold text-2xl lg:text-3xl">
-        Your personalized{" "}
-        <span className="text-primary">Itinerary..{tripId}</span>
+      <div className="text-center font-bold text-2xl lg:text-3xl pt-[80px]">
+        Your personalized Itinerary
       </div>
       <div className="timeline-container p-10">
         <ul className="timeline timeline-snap-icon max-md:timeline-compact timeline-vertical">
           {planDetails &&
-            planDetails.map((dayActivities, dayIndex) =>
-              Object.entries(dayActivities).map(([day, activities], index) => (
-                <li key={`${day}-${index}`}>
-                  <div className="timeline-middle">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill={
-                        completedDays.includes(parseInt(day))
-                          ? "lightgreen"
-                          : "white"
-                      }
-                      className="h-5 w-5"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </div>
-                  <div
-                    className={`mb-10 ${
-                      index % 2 === 0
-                        ? "timeline-start md:text-end justify-start"
-                        : "timeline-end md:text-start justify-end"
-                    }`}
+            planDetails.map((dayActivities, dayIndex) => (
+              <li key={dayIndex}>
+                <div className="timeline-middle">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill={
+                      completedDays.includes(dayIndex + 1)
+                        ? "lightgreen"
+                        : "white"
+                    }
+                    className="h-5 w-5"
                   >
-                    <time className="font-bold italic text-primary">
-                      Day {day}
-                    </time>
-                    {activities.map((activity, activityIndex) => (
-                      <div key={`${day}-${activityIndex}`} className="mb-5">
-                        <div className="text-lg font-black mt-2">
-                          {activity.place_name}
-                        </div>
-                        <p>{activity.description}</p>
-                        <p className="text-neutral-content text-xs">
-                          Estimated time for exploring : {activity.TOE}
-                        </p>
-                        {/* Add any other details you want to display */}
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div
+                  className={`mb-10 ${
+                    (dayIndex + 1) % 2 === 0
+                      ? "timeline-start md:text-end justify-start"
+                      : "timeline-end md:text-start justify-end"
+                  }`}
+                >
+                  <time className="font-bold italic text-custom-light-blue">
+                    Day {dayIndex + 1}
+                  </time>
+                  {dayActivities.map((activity, activityIndex) => (
+                    <div key={activityIndex} className="mb-5">
+                      <div className="text-lg font-black mt-2">
+                        <a
+                          className="link link-hover"
+                          href={`https://maps.google.com/?q=${
+                            activity.place_name || activity.lat_long
+                          }`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {activity.place_name ||
+                            activity.restaurant_name ||
+                            activity.night_club_name}
+                        </a>
                       </div>
-                    ))}
-                    {currentDay === parseInt(day) && (
-                      <div
-                        className={`flex gap-2 mt-3 mb-5 justify-start ${
-                          dayIndex % 2 === 0
-                            ? "md:justify-end"
-                            : "md:justify-start"
-                        }`}
-                      >
-                        <>
-                          <button
-                            className="btn btn-xs md:btn-sm bg-base-200"
-                            onClick={() =>
-                              document.getElementById(`my_modal_5`).showModal()
-                            }
-                          >
-                            <Lottie
-                              options={defaultOptions}
-                              height={20}
-                              width={20}
-                            />
-                            Ask Gemini
-                          </button>
-                          <dialog id="my_modal_5" className="modal">
-                            <div className="modal-box flex items-start justify-center min-h-sm">
-                              <form method="dialog">
-                                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-                                  ✕
-                                </button>
-                              </form>
-                              {modalLoading ? (
-                                <div className="flex justify-center items-center text-primary gap-2">
-                                  <Lottie
-                                    options={defaultOptions}
-                                    height={20}
-                                    width={20}
-                                  />
-                                  Loading suggestions..
-                                </div>
-                              ) : (
-                                <div>
-                                  {suggestionsModal ? (
-                                    <>
-                                      <div className="flex items-center justify-start mb-2">
-                                        <img
-                                          src={geminiIcon}
-                                          alt="Gemini Icon"
-                                          className="h-6 w-6 mr-2"
-                                        />
-                                        <h3 className="text-sm md:text-lg font-bold">
-                                          Gemini generated suggestions..
-                                        </h3>
+                      <p>{activity.description}</p>
+                      <p className="text-neutral-content text-xs">
+                        Estimated time for exploring: {activity.TOE}
+                      </p>
+                    </div>
+                  ))}
+
+                  {currentDay === dayIndex + 1 && (
+                    <div
+                      className={`flex gap-2 mt-3 mb-5 justify-start ${
+                        (dayIndex + 1) % 2 === 0
+                          ? "md:justify-end"
+                          : "md:justify-start"
+                      }`}
+                    >
+                      <>
+                        <button
+                          className="btn btn-xs md:btn-sm bg-base-200"
+                          onClick={() =>
+                            document.getElementById(`my_modal_5`).showModal()
+                          }
+                        >
+                          <Lottie
+                            options={defaultOptions}
+                            height={20}
+                            width={20}
+                          />
+                          Ask Gemini
+                        </button>
+                        <dialog id="my_modal_5" className="modal">
+                          <div className="modal-box flex items-start justify-center min-h-sm">
+                            <form method="dialog">
+                              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                                ✕
+                              </button>
+                            </form>
+                            {modalLoading ? (
+                              <div className="flex justify-center items-center text-primary gap-2">
+                                <Lottie
+                                  options={defaultOptions}
+                                  height={20}
+                                  width={20}
+                                />
+                                Loading suggestions..
+                              </div>
+                            ) : (
+                              <div>
+                                {suggestionsModal ? (
+                                  <>
+                                    {suggestionloading ? (
+                                      <div className="flex flex-row items-center justify-center p-5">
+                                        <span className="loading loading-spinner text-primary loading-md mr-5"></span>
+                                        Applying changes...
                                       </div>
-                                      <div className="text-left mt-5">
-                                        {planChanges}
-                                      </div>
-                                      <div className="flex justify-end items-end mt-10">
-                                        <button
-                                          className="btn btn-sm btn-success"
-                                          onClick={() =>
-                                            handleSuggestionClick()
-                                          }
-                                        >
+                                    ) : (
+                                      <>
+                                        <div className="flex items-center justify-start mb-2">
                                           <img
-                                            src={TickConfirmation}
-                                            alt="Login Icon"
-                                            className="h-4 w-4"
+                                            src={geminiIcon}
+                                            alt="Gemini Icon"
+                                            className="h-6 w-6 mr-2"
                                           />
-                                          Confirm
-                                        </button>
-                                        <button className="btn btn-sm btn-error ml-5">
-                                          <img
-                                            src={DiscardConfirmation}
-                                            alt="Login Icon"
-                                            className="h-4 w-4"
-                                          />
-                                          Discard
-                                        </button>
+                                          <h3 className="text-sm md:text-lg font-bold">
+                                            Gemini generated suggestions..
+                                          </h3>
+                                        </div>
+                                        <div className="text-left mt-5">
+                                          {planChanges}
+                                        </div>
+                                        <div className="flex justify-end items-end mt-10">
+                                          <button
+                                            className="btn btn-sm btn-success"
+                                            onClick={() =>
+                                              handleSuggestionClick()
+                                            }
+                                          >
+                                            <img
+                                              src={TickConfirmation}
+                                              alt="Confirm Icon"
+                                              className="h-4 w-4"
+                                            />
+                                            Confirm
+                                          </button>
+                                          <button
+                                            className="btn btn-sm btn-error ml-5"
+                                            onClick={() =>
+                                              setSuggestionsModal(false)
+                                            }
+                                          >
+                                            <img
+                                              src={DiscardConfirmation}
+                                              alt="Discard Icon"
+                                              className="h-4 w-4"
+                                            />
+                                            Discard
+                                          </button>
+                                        </div>
+                                      </>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center justify-start mb-2">
+                                      <Lottie
+                                        options={defaultOptions}
+                                        height={20}
+                                        width={20}
+                                      />
+                                      <h3 className="text-sm md:text-lg font-bold ml-2">
+                                        Unexpected turns? Want to change
+                                        Itinerary?
+                                      </h3>
+                                    </div>
+                                    {error ? (
+                                      <div className="text-red-500 text-center mt-4">
+                                        {error}{" "}
+                                        {retryCountdown > 0 &&
+                                          `Retry in ${retryCountdown} seconds`}
                                       </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <div className="flex items-center justify-start mb-2">
-                                        <Lottie
-                                          options={defaultOptions}
-                                          height={20}
-                                          width={20}
-                                        />
-                                        <h3 className="text-sm md:text-lg font-bold ml-2">
-                                          Unexpected turns? Want to change
-                                          Itinerary?
-                                        </h3>
-                                      </div>
-                                      <div className="text-center">
-                                        <textarea
-                                          className="textarea textarea-bordered w-full max-w-md mx-auto mt-5"
-                                          rows={5}
-                                          placeholder="Describe the changes you want to make in the Itinerary..."
-                                          onChange={(e) =>
-                                            setUserChanges(e.target.value)
-                                          }
-                                        ></textarea>
+                                    ) : (
+                                      <div className="text-center relative w-full max-w-md mx-auto mt-5">
+                                        <div className="relative">
+                                          <textarea
+                                            className="textarea textarea-bordered w-full"
+                                            rows={5}
+                                            placeholder="Describe the changes you want to make in the Itinerary..."
+                                            onChange={(e) =>
+                                              setUserChanges(e.target.value)
+                                            }
+                                            style={{ paddingBottom: "3rem" }} // Adding padding to the bottom for space
+                                          ></textarea>
+                                          <div className="absolute bottom-2 right-2">
+                                            <button
+                                              className="btn btn-sm btn-ghost flex items-center"
+                                              onClick={() => {
+                                                document
+                                                  .getElementById("my_prompt_guide_modal")
+                                                  .showModal();
+                                              }}
+                                            >
+                                              <img
+                                                src={promptGuide}
+                                                alt="Prompt Guide Icon"
+                                                className="h-4 w-4"
+                                              />
+                                            </button>
+                                          </div>
+                                        </div>
                                         <button
                                           className="btn btn-outline btn-primary btn-sm mt-5"
                                           onClick={() =>
@@ -363,90 +433,158 @@ function Plan({ loggedInUser }) {
                                           Get AI powered suggestions
                                         </button>
                                       </div>
-                                    </>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </dialog>
-                        </>
-
-                        <button
-                          className="btn btn-xs md:btn-sm bg-base-200"
-                          onClick={() =>
-                            handleLocateClick(day.latitude_and_longitude)
-                          }
-                        >
-                          <img
-                            src={googleMapIcon}
-                            alt="Google Map Icon"
-                            className="h-6 w-6"
-                          />
-                          Locate
-                        </button>
-
-                        <button
-                          className="relative inline-flex items-center justify-center px-10 py-4 overflow-hidden bg-base-200 text-white rounded-lg group btn-xs md:btn-sm"
-                          onClick={() => {
-                            setSelectedDay(day);
-                            document.getElementById("my_modal_3").showModal();
-                          }}
-                        >
-                          <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-success rounded-full group-hover:w-56 group-hover:h-56 text-black"></span>
-                          <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg "></span>
-                          <span className="relative">Mark as completed?</span>
-                        </button>
-
-                        <dialog id="my_modal_3" className="modal">
-                          <div className="modal-box max-w-sm">
-                            <form method="dialog">
-                              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-4">
-                                ✕
-                              </button>
-                            </form>
-                            <h3 className="font-bold text-sm md:text-lg text-left">
-                              Confirmation
-                            </h3>
-                            <p className="py-4 text-sm md:text-lg text-center">
-                              Are you sure you want to mark this day as
-                              completed?
-                            </p>
-                            <div className="flex justify-center">
-                              <button
-                                className="btn btn-sm btn-success"
-                                onClick={() => handleConfirmClick(selectedDay)}
-                              >
-                                <img
-                                  src={TickConfirmation}
-                                  alt="Login Icon"
-                                  className="h-4 w-4"
-                                />
-                                Confirm
-                              </button>
-                              <button className="btn btn-sm btn-error ml-5">
-                                <img
-                                  src={DiscardConfirmation}
-                                  alt="Login Icon"
-                                  className="h-4 w-4"
-                                />
-                                Discard
-                              </button>
-                            </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </dialog>
-                      </div>
-                    )}
-                  </div>
-                  <hr
-                    className={
-                      completedDays.includes(parseInt(day))
-                        ? "bg-green-500"
-                        : ""
-                    }
-                  />
-                </li>
-              ))
-            )}
+                      </>
+                     
+                      <dialog id="my_prompt_guide_modal" className="modal">
+                        <div className="modal-box">
+                          <form method="dialog">
+                            {/* if there is a button in form, it will close the modal */}
+                            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
+                              ✕
+                            </button>
+                          </form>
+                          <h3 className="font-bold text-lg">Prompt Guide</h3>
+                          <p className="py-4 text-sm">
+                            Below are some of the prompts highlighting various capabilities...
+                          </p>
+                          <ul>
+                          <p className="py-2 text-md">
+                            <u>Change itinerary based on theme</u>
+                          </p>
+  
+
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to art
+                          </li>
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to culture
+                          </li>
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to culinary experiences
+                          </li>
+                          <li className="text-sm">
+                          - Dedicate the day to activites related to family
+                          </li>
+
+                          <p className="py-2 text-md">
+                           <u>Change itinerary based on food choice</u> 
+                          </p>
+                          <li className="text-sm">
+                          - Recommend street food for evening
+                          </li>
+                          <li className="text-sm">
+                          - Recommend an Ice cream shop to end the day.
+                          </li>
+                          <li className="text-sm">
+                          - Recommend a dessert shop.
+                          </li>
+                          <li className="text-sm">
+                          - Change cuisine of the restaurants to indian, italian and lebanese
+                          </li>
+                          <p className="py-2 text-md">
+                            <u>Add activities based on your mood</u>
+                          </p>
+                          <li className="text-sm">
+                          - Add a trip to a bowling alley.
+                          </li>
+                          <li className="text-sm">
+                          - Recommend some nightclub.
+                          </li>
+                          <li className="text-sm">
+                          - Recommend some beach activites
+                          </li>
+                          
+                          <p className="py-3 text-sm">If that's not sufficient, you can also adjust an entire day of the itinerary or even the entire itinerary.</p>
+
+                          </ul>
+                        </div>
+                      </dialog>
+                      <button
+                        className="btn btn-xs md:btn-sm bg-base-200"
+                        onClick={() =>
+                          handleLocateClick(dayActivities, dayIndex, tripId)
+                        } // Pass day data
+                      >
+                        <img
+                          src={googleMapIcon}
+                          alt="Google Map Icon"
+                          className="h-6 w-6"
+                        />
+                        Locate
+                      </button>
+
+                      <button
+                        className="relative inline-flex items-center justify-center px-10 py-4 overflow-hidden bg-base-200 text-gray rounded-lg group btn-xs md:btn-sm"
+                        onClick={() => {
+                          setSelectedDay(dayIndex + 1);
+                          document.getElementById("my_modal_3").showModal();
+                        }}
+                      >
+                        <span className="absolute w-0 h-0 transition-all duration-500 ease-out bg-success rounded-full group-hover:w-56 group-hover:h-56 text-black"></span>
+                        <span className="absolute inset-0 w-full h-full -mt-1 rounded-lg "></span>
+                        <span className="relative font-bold">
+                          Mark it as completed?
+                        </span>
+                      </button>
+
+                      <dialog id="my_modal_3" className="modal">
+                        <div className="modal-box max-w-sm">
+                          <form method="dialog">
+                            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-4">
+                              ✕
+                            </button>
+                          </form>
+                          <h3 className="font-bold text-sm md:text-lg text-left">
+                            Confirmation
+                          </h3>
+                          <p className="py-4 text-sm md:text-lg text-center">
+                            Are you sure you want to mark this day as completed?
+                          </p>
+                          <div className="flex justify-center">
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => handleConfirmClick(selectedDay)}
+                            >
+                              <img
+                                src={TickConfirmation}
+                                alt="Login Icon"
+                                className="h-4 w-4"
+                              />
+                              Confirm
+                            </button>
+                            <button
+                              className="btn btn-sm btn-error ml-5"
+                              onClick={handleDiscardClick}
+                            >
+                              <img
+                                src={DiscardConfirmation}
+                                alt="Login Icon"
+                                className="h-4 w-4"
+                              />
+                              Discard
+                            </button>
+                          </div>
+                        </div>
+                      </dialog>
+                    </div>
+                  )}
+                </div>
+                <hr
+                  className={`transition-all duration-1000 ease-in-out ${
+                    completedDays.includes(dayIndex + 1)
+                      ? "bg-green-500 animate-fill"
+                      : ""
+                  }`}
+                />
+              </li>
+            ))}
         </ul>
       </div>
     </>

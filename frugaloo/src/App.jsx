@@ -10,6 +10,8 @@ import Plan from "./components/Plan";
 import PromptInput from "./components/PromptInput";
 import Trip from "./components/Trips";
 import Finance from "./components/Finance";
+import Locate from "./components/Locate";
+import HeroImage from "./assets/FrameBackground.png"; // Import the background image
 
 const supabase = createClient(
   "https://wqbvxqxuiwhmretkcjaw.supabase.co",
@@ -20,6 +22,8 @@ function App() {
   const [session, setSession] = useState(null);
   const [loggedInUser, setLoggedInUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDayData, setSelectedDayData] = useState(null);
+  const [budget, setBudget] = useState(2);
 
   useEffect(() => {
     async function fetchSession() {
@@ -50,9 +54,9 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center mt-[300px] text-primary">
-        <span className="loading loading-spinner loading-lg mr-5"></span>
-        Loading Travelify...
+      <div className="flex justify-center items-center pt-[300px] font-lato">
+        <span className="loading loading-spinner loading-lg mr-5 text-custom-blue"></span>
+        Loading Travelify..
       </div>
     );
   }
@@ -63,7 +67,12 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div>
+      <div
+        className="min-h-screen bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${HeroImage})`, // Apply background image
+        }}
+      >
         <Navbar loggedInUser={loggedInUser} />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -71,20 +80,36 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/planinput"
-            element={<PlanInput loggedInUser={loggedInUser} />}
+            element={
+              <PlanInput
+                loggedInUser={loggedInUser}
+                budget={budget}
+                setBudget={setBudget}
+              />
+            }
           />
-          <Route path="/plan/:tripId" element={<Plan loggedInUser={loggedInUser}/>} />
           <Route
-            path="/PromptInput"
-            element={<PromptInput loggedInUser={loggedInUser} />}
-          />
-          <Route
-            path="/mytrips"
-            element={<Trip loggedInUser={loggedInUser} />}
+            path="/plan/:tripId"
+            element={
+              <Plan
+                loggedInUser={loggedInUser}
+                budget={budget}
+                onLocateClick={setSelectedDayData}
+              />
+            }
           />
           <Route
             path="/myfinances"
+            element={<PromptInput loggedInUser={loggedInUser} />}
+          />
+          <Route path="/mytrips" element={<Trip loggedInUser={loggedInUser} />} />
+          <Route
+            path="/myfinances"
             element={<Finance loggedInUser={loggedInUser} />}
+          />
+          <Route
+            path="/locate/:tripId/:dayId"
+            element={<Locate loggedInUser={loggedInUser} dayData={selectedDayData} />}
           />
         </Routes>
       </div>

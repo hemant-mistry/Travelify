@@ -35,3 +35,156 @@
 .navbar.scrolled {
   background-color: black;
 }
+
+
+.animate-fill {
+  animation: fillBackground 1s ease-in-out;
+}
+
+/* global.css */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+
+/* Hero section */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  padding: 10px;
+}
+
+.hero-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 10px;
+}
+
+@media (min-width: 768px) {
+  .hero-inner {
+    flex-direction: row;
+    padding-left: 10px;
+  }
+}
+
+.hero-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .hero-content {
+    align-items: flex-start;
+    text-align: left;
+    margin-right: 120px;
+  }
+}
+
+.hero-content h1 {
+  margin-bottom: 20px;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.hero-content p {
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .button-container {
+    justify-content: flex-start;
+  }
+}
+
+.button-container button {
+  padding: 10px 40px;
+  background: linear-gradient(to right, #1e40af, #1e3a8a);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.hero-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-image {
+  display: none;
+  width: 400px;
+}
+
+@media (min-width: 768px) {
+  .hero-image {
+    display: block;
+  }
+}
+
+/* Tech stack section */
+.tech-stack-section {
+  background-color: rgba(60, 68, 85, 0.75);
+  width: 100%;
+  padding: 65px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .tech-stack-section {
+    flex-direction: row;
+    height: 132px;
+  }
+}
+
+.tech-stack-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .tech-stack-item {
+    margin-bottom: 0;
+  }
+}
+
+.tech-stack-item img {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+.tech-stack-item p {
+  font-size: 1.5rem;
+  color: white;
+}
