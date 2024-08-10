@@ -16,7 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_BACKEND_URL: "https://frugaloo-backend.azurewebsites.net/"
-      VITE_GOOGLE_MAPS_API_KEY: "AIzaSyAhpuXqyBQc_PhU2A9RKb6RAwqK71BhqBE"
+      VITE_GOOGLE_MAPS_API_KEY: "AIzaSyCWQFnhMkl6yEfZrZKZp6gMCfO1YnZf0Ts"
+      VITE_SUPABASE_CLIENT: "https://wqbvxqxuiwhmretkcjaw.supabase.co"
+      VITE_SUPABASE_SECRET: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s"
     steps:
       - uses: actions/checkout@v3
 
