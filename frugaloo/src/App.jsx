@@ -14,8 +14,8 @@ import Locate from "./components/Locate";
 import HeroImage from "./assets/FrameBackground.png"; // Import the background image
 
 const supabase = createClient(
-  "https://wqbvxqxuiwhmretkcjaw.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndxYnZ4cXh1aXdobXJldGtjamF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTk3MTYyMTQsImV4cCI6MjAzNTI5MjIxNH0.CXyPAdKKgwjmPee0OmvV4BxnQUj_4y3ARbaEuSToz6s"
+  import.meta.env.VITE_SUPABASE_CLIENT,
+  import.meta.env.VITE_SUPABASE_SECRET
 );
 
 function App() {
@@ -24,6 +24,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [selectedDayData, setSelectedDayData] = useState(null);
   const [budget, setBudget] = useState(2);
+  const [imageLoaded, setImageLoaded] = useState(false); // State to track image loading
 
   useEffect(() => {
     async function fetchSession() {
@@ -52,7 +53,15 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    const img = new Image();
+    img.src = HeroImage;
+    img.onload = () => {
+      setImageLoaded(true); // Set imageLoaded to true when the image is fully loaded
+    };
+  }, []);
+
+  if (loading || !imageLoaded) { // Display loading spinner until both session and image are loaded
     return (
       <div className="flex justify-center items-center pt-[300px] font-lato">
         <span className="loading loading-spinner loading-lg mr-5 text-custom-blue"></span>
@@ -70,7 +79,7 @@ function App() {
       <div
         className="min-h-screen bg-cover bg-center"
         style={{
-          backgroundImage: `url(${HeroImage})`, // Apply background image
+          backgroundImage: `url(${HeroImage})`, // Apply background image only after it's loaded
         }}
       >
         <Navbar loggedInUser={loggedInUser} />
@@ -102,9 +111,12 @@ function App() {
             path="/myfinances"
             element={<PromptInput loggedInUser={loggedInUser} />}
           />
-          <Route path="/mytrips" element={<Trip loggedInUser={loggedInUser} />} />
           <Route
-            path="/myfinances"
+            path="/mytrips"
+            element={<Trip loggedInUser={loggedInUser} />}
+          />
+          <Route
+            path="/Faqs"
             element={<Finance loggedInUser={loggedInUser} />}
           />
           <Route

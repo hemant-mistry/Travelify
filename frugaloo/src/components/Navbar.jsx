@@ -30,6 +30,10 @@ function Navbar({ loggedInUser }) {
     navigate("/planinput");
   };
 
+  const handleHelpClick = () => {
+    navigate("/Faqs");
+  };
+
   const handleScroll = () => {
     if (window.scrollY > 0) {
       setScrolled(true);
@@ -49,7 +53,7 @@ function Navbar({ loggedInUser }) {
     <>
       <div
         className={`navbar rounded-md fixed w-full transition-all duration-300 ease-in-out ${
-          scrolled ? 'bg-black z-50' : ''
+          scrolled ? 'bg-black z-50' : 'z-50'
         }`}
       >
         <div className="flex-1">
@@ -64,7 +68,7 @@ function Navbar({ loggedInUser }) {
             </button>
           </div>
           <div className="help tooltip tooltip-bottom" data-tip="Help">
-            <button className="btn btn-ghost">
+            <button className="btn btn-ghost" onClick={handleHelpClick}>
               <img src={helpicon} alt="Help Icon" className="h-6 w-6" />
             </button>
           </div>
@@ -106,12 +110,7 @@ function Navbar({ loggedInUser }) {
                     dropdownOpen ? "block" : "hidden"
                   }`}
                 >
-                  <li>
-                    <a className="justify-between">
-                      Profile
-                      <span className="badge">New</span>
-                    </a>
-                  </li>
+                
                   <li>
                     <Link to="/mytrips">My Itineraries</Link>
                   </li>

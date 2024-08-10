@@ -67,13 +67,7 @@ function Home() {
       {/* Travelify features description section */}
       <div className="flex flex-col items-center justify-center">
         <div className="text-4xl">Features of Travelify</div>
-        <div className="w-[22rem] text-sm text-center md:text-md md:w-[50rem] md:p-5 mt-2">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut sed
-          viverra faucibus ac imperdiet pellentesque. Sit purus augue arcu quam
-          orci. Et tortor, gravida libero et amet. Pretium commodo, odio viverra
-          mauris vitae sisl congue bibendume. Lorem scelerisque volutpat aliquam
-          convallis tellus nunc, molestie.
-        </div>
+       
       </div>
       <div className="flex flex-col md:flex-row gap-10 items-center justify-center mt-10 font-lato">
         <div className="card card-compact bg-[#202020] w-[348px] h-[375px] shadow-xl">

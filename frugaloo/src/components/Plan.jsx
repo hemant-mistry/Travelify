@@ -10,6 +10,7 @@ import animationData from "../assets/lotties/gemini.json";
 import geminiData from "../assets/lotties/gemini-logo.json";
 import promptGuide from "../assets/promptGuide.png";
 import Lottie from "react-lottie";
+import QuoteComponent from "./Quotes";
 function Plan({ loggedInUser, onLocateClick, budget }) {
   const defaultOptions = {
     loop: true,
@@ -39,7 +40,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
   const [planChanges, setPlanChanges] = useState(""); // State to hold the changes from the plan
   const [suggestionsModal, setSuggestionsModal] = useState(false);
   const [newPlan, setNewPlan] = useState([]);
-  const [modalLoading, setModalLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(true);
   const [suggestionloading, setSuggestionLoading] = useState(false);
   const [error, setError] = useState(""); // State to hold error message
   const [errorTimeout, setErrorTimeout] = useState(null);
@@ -319,7 +320,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                                   height={20}
                                   width={20}
                                 />
-                                Loading suggestions..
+                                      <QuoteComponent /> 
                               </div>
                             ) : (
                               <div>
@@ -441,7 +442,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                           </div>
                         </dialog>
                       </>
-                     
+
                       <dialog id="my_prompt_guide_modal" className="modal">
                         <div className="modal-box">
                           <form method="dialog">
@@ -452,57 +453,62 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                           </form>
                           <h3 className="font-bold text-lg">Prompt Guide</h3>
                           <p className="py-4 text-sm">
-                            Below are some of the prompts highlighting various capabilities...
+                            Below are some of the prompts highlighting various
+                            capabilities...
                           </p>
                           <ul>
-                          <p className="py-2 text-md">
-                            <u>Change itinerary based on theme</u>
-                          </p>
-  
+                            <p className="py-2 text-md">
+                              <u>Change itinerary based on theme</u>
+                            </p>
 
-                          <li className="text-sm">
-                          - Dedicate the day to activites related to art
-                          </li>
-                          <li className="text-sm">
-                          - Dedicate the day to activites related to culture
-                          </li>
-                          <li className="text-sm">
-                          - Dedicate the day to activites related to culinary experiences
-                          </li>
-                          <li className="text-sm">
-                          - Dedicate the day to activites related to family
-                          </li>
+                            <li className="text-sm">
+                              - Dedicate the day to activites related to art
+                            </li>
+                            <li className="text-sm">
+                              - Dedicate the day to activites related to culture
+                            </li>
+                            <li className="text-sm">
+                              - Dedicate the day to activites related to
+                              culinary experiences
+                            </li>
+                            <li className="text-sm">
+                              - Dedicate the day to activites related to family
+                            </li>
 
-                          <p className="py-2 text-md">
-                           <u>Change itinerary based on food choice</u> 
-                          </p>
-                          <li className="text-sm">
-                          - Recommend street food for evening
-                          </li>
-                          <li className="text-sm">
-                          - Recommend an Ice cream shop to end the day.
-                          </li>
-                          <li className="text-sm">
-                          - Recommend a dessert shop.
-                          </li>
-                          <li className="text-sm">
-                          - Change cuisine of the restaurants to indian, italian and lebanese
-                          </li>
-                          <p className="py-2 text-md">
-                            <u>Add activities based on your mood</u>
-                          </p>
-                          <li className="text-sm">
-                          - Add a trip to a bowling alley.
-                          </li>
-                          <li className="text-sm">
-                          - Recommend some nightclub.
-                          </li>
-                          <li className="text-sm">
-                          - Recommend some beach activites
-                          </li>
-                          
-                          <p className="py-3 text-sm">If that's not sufficient, you can also adjust an entire day of the itinerary or even the entire itinerary.</p>
+                            <p className="py-2 text-md">
+                              <u>Change itinerary based on food choice</u>
+                            </p>
+                            <li className="text-sm">
+                              - Recommend street food for evening
+                            </li>
+                            <li className="text-sm">
+                              - Recommend an Ice cream shop to end the day.
+                            </li>
+                            <li className="text-sm">
+                              - Recommend a dessert shop.
+                            </li>
+                            <li className="text-sm">
+                              - Change cuisine of the restaurants to indian,
+                              italian and lebanese
+                            </li>
+                            <p className="py-2 text-md">
+                              <u>Add activities based on your mood</u>
+                            </p>
+                            <li className="text-sm">
+                              - Add a trip to a bowling alley.
+                            </li>
+                            <li className="text-sm">
+                              - Recommend some nightclub.
+                            </li>
+                            <li className="text-sm">
+                              - Recommend some beach activites
+                            </li>
 
+                            <p className="py-3 text-sm">
+                              If that's not sufficient, you can also adjust an
+                              entire day of the itinerary or even the entire
+                              itinerary.
+                            </p>
                           </ul>
                         </div>
                       </dialog>
