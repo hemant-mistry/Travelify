@@ -1221,7 +1221,7 @@ class GenerateMessageView(APIView):
 
         # Generate AI response using Gemini
         intent_classifier = genai.GenerativeModel(
-            model_name="gemini-1.5-pro",
+            model_name="gemini-1.5-flash",
             generation_config=generation_config,
             system_instruction='You are an intent classifier, you need to classify and divide in the user\'s questions in two different parts. The user questions will contain the information regarding the information the user wants to extract from the SQL database and the chart or visual the user wants to see that data. You also need to classify whether the questions asked is a follow-up questions based on the chat history given below. If there is no visual_type specified leave the field as blank.\n\n\n### OUTPUT ###\nYour output should be a JSON containing two entities namely,\n{\n"information_needed": " ",\n"visual_type": " "\n}\n\n### For example ###\nUser: Show me the day wise breakdown of my spendings in line chart\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": "line chart"\n}\n\nUser: Show me the day wise breakdown of my spendings.\nModel: \n{\n"information_needed": "Show me the day wise breakdown of my spendings"\n"visual_type": ""\n}\n',
         )
@@ -1273,6 +1273,7 @@ class GenerateMessageView(APIView):
         print(query_result)
         # Log the message and response asynchronously
         self.log_message_sync(user_id, message, sql_response)
+        genai.configure(api_key=os.environ["GOOGLE_FINANCE_INSIGHTS_API_KEY"])
 
         # Generate insights using Gemini
         insights_model_generation_config = {
@@ -1351,6 +1352,8 @@ class GenerateMessageView(APIView):
             insights = ""
             extracted_data = ""
         react_visual_component = ""
+        genai.configure(api_key=os.environ["GOOGLE_FINANCE_REACT_API_KEY"])
+
         if visual_response.strip() != "0":
 
             # Generate React visual component response using Gemini

@@ -40,7 +40,7 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
   const [planChanges, setPlanChanges] = useState(""); // State to hold the changes from the plan
   const [suggestionsModal, setSuggestionsModal] = useState(false);
   const [newPlan, setNewPlan] = useState([]);
-  const [modalLoading, setModalLoading] = useState(true);
+  const [modalLoading, setModalLoading] = useState(false);
   const [suggestionloading, setSuggestionLoading] = useState(false);
   const [error, setError] = useState(""); // State to hold error message
   const [errorTimeout, setErrorTimeout] = useState(null);
@@ -314,12 +314,8 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                               </button>
                             </form>
                             {modalLoading ? (
-                              <div className="flex justify-center items-center text-primary gap-2">
-                                <Lottie
-                                  options={defaultOptions}
-                                  height={20}
-                                  width={20}
-                                />
+                              <div className="flex justify-center items-center text-primary gap-2 h-[150px]">
+                               
                                       <QuoteComponent /> 
                               </div>
                             ) : (
@@ -494,9 +490,6 @@ function Plan({ loggedInUser, onLocateClick, budget }) {
                             <p className="py-2 text-md">
                               <u>Add activities based on your mood</u>
                             </p>
-                            <li className="text-sm">
-                              - Add a trip to a bowling alley.
-                            </li>
                             <li className="text-sm">
                               - Recommend some nightclub.
                             </li>

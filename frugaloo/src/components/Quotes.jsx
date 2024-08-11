@@ -35,15 +35,17 @@ const QuoteComponent = () => {
         } while (newQuote === prevQuote);
         return newQuote;
       });
-    }, 1000);
+    }, 3000);
 
     // Cleanup the interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
   return (
-    <div className="flex justify-center items-center text-primary gap-2">
-      <div className="quote-box">{currentQuote}</div>
+    <div className="flex flex-col justify-center items-center text-primary gap-2 fixed w-30 p-5">
+    <span className="loading loading-spinner loading-md"></span>
+
+      <div className="quote-box text-center mt-3 text-white">{currentQuote}</div>
     </div>
   );
 };
