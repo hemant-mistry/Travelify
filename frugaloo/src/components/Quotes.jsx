@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from "react";
 
 const quotes = [
-  "Travel is the healthiest addiction.",
-  "Discovering new places is a way to discover more about yourself.",
-  "There are no strangers here; only friends you haven’t yet met. – William Butler Yeats"
+ "Hang on tight, your journey is about to get even better!",
+"Gemini's sifting through your preferences to craft the perfect itinerary.",
+"Adjusting your travel plans—this is where the magic happens.",
+"We’re fine-tuning the details to make your trip unforgettable.",
+"Gemini’s mapping out the best routes for your adventure.",
+"Hold tight—your ideal itinerary is almost ready!",
+"Adding a dash of excitement to your travel plans. Just a bit longer!",
+"Gemini’s working behind the scenes to create something special.",
+"Fine-tuning those final touches for the ultimate experience.",
+"Your journey is about to get a serious upgrade. Stay tuned!",
+"Gemini’s sorting out the best options for your perfect trip.",
+"Almost there! Your personalized itinerary is just moments away.",
+"Your adventure is getting an extra layer of awesomeness.",
+"Hang tight—Gemini’s adding some surprises to your itinerary!",
+"We’re making sure every detail is just right for your trip.",
+"Just a few more tweaks and your adventure will be set.",
+"Gemini’s cooking up something truly unforgettable for you.",
+"Almost done! Your custom travel plans are nearly ready.",
+"Your perfect trip is just around the corner. Almost there!"
 ];
 
 const QuoteComponent = () => {
