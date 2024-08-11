@@ -50,55 +50,6 @@ function Finance() {
       </div>
 
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Account and Profile</h2>
-        <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box mb-2">
-          <input type="checkbox" className="peer" />
-          <div className="collapse-title text-md font-medium">
-            What are avatars in Travelify, and how do they work?
-          </div>
-          <div className="collapse-content">
-            <p>
-              Avatars in Travelify represent different travel personas, each
-              with its own set of preferences. When setting up your profile, you
-              can choose an avatar that aligns with your travel style, such as
-              "City explorer", "Culture Enthusiast," or "Food Lover." This helps
-              tailor your itinerary based on your chosen travel persona.
-            </p>
-          </div>
-        </div>
-
-        <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box mb-2">
-          <input type="checkbox" className="peer" />
-          <div className="collapse-title text-md font-medium">
-            Can I change my avatar after setting it up?
-          </div>
-          <div className="collapse-content">
-            <p>
-              Yes, you can change your avatar at any time. Simply go to the
-              "Profile" section in the app, select a new avatar, and your
-              preferences and options will be updated accordingly.
-            </p>
-          </div>
-        </div>
-
-        <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box mb-2">
-          <input type="checkbox" className="peer" />
-          <div className="collapse-title text-md font-medium">
-            How do avatars affect my travel planning?
-          </div>
-          <div className="collapse-content">
-            <p>
-              Each avatar is associated with specific preferences and interests.
-              For example, an "Adventure Seeker" might prioritize outdoor
-              activities and adventure sports, while a "Culture Enthusiast"
-              might focus on museums and historical sites. This helps you focus
-              on activities and places that match your chosen travel persona.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Itinerary Planning</h2>
         <div className="collapse collapse-arrow border border-base-300 bg-base-100 rounded-box mb-2">
           <input type="checkbox" className="peer" />
