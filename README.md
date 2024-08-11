@@ -15,3 +15,9 @@ Travelify is the ultimate itinerary planner designed to streamline your travel p
 ### Usage
 Use Travelify to effortlessly plan your trips with personalized itineraries. Enter your destination, travel dates, and budget to create tailored travel plans. Adjust your itinerary dynamically and track your expenses for a smooth travel experience.
 For more details, refer to the Documentation.
+
+
+### Architecture
+![image](https://github.com/user-attachments/assets/93a6c72b-408c-4539-94a9-c11426bb19e2)
+
+
