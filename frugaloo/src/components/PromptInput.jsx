@@ -173,7 +173,7 @@ function PromptInput({ loggedInUser }) {
   };
 
   const button1Text =
-    "Can you give me a comparison of my spendings for all my trips";
+    "Show me on which restaurant did I spent the most";
   const button2Text =
     "Show me the cost breakdown for my trips based on categories";
   const button3Text = "Can you show me the place where I spent the most";
@@ -203,7 +203,7 @@ function PromptInput({ loggedInUser }) {
                 className="btn btn-primary btn-outline btn-xs sm:btn-sm md:btn-md lg:btn-md"
                 onClick={() =>
                   handleButtonClick(
-                    "Can you give me a comparison of my spendings for all my trips"
+                    "Show me on which restaurant did I spent the most"
                   )
                 }
               >

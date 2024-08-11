@@ -48,15 +48,7 @@ function Home() {
           <p className="text-white text-2xl">Google Places API</p>
         </div>
 
-        <div className="flex items-center mb-4 md:mb-0">
-          <img
-            src={SupabaseTechStack}
-            alt="Image 3"
-            className="w-15 h-15 mr-2"
-          />
-          <p className="text-white text-2xl">Supabase</p>
-        </div>
-
+        
         <div className="flex items-center">
           <p className="text-white text-2xl">ReactJS + Django</p>
         </div>
@@ -142,13 +134,7 @@ function Home() {
               </svg>
             </div>
             <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
-              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
-              duis dolor. Congue suspendisse aliquam ut egestas duis dolor.
-              Congue suspendisse consectetur adipiscing elit. At sit ut nulla eu
-              stetur eget. Nec, ac, sollicitudin aliquam ut egestas duis dolor.
-              Congue suspendisse aliquam ut egestas duis dolor. Congue
-              suspendiss consectetur adipiscing elit.
+            To get started, you can log in by entering your email and password, or, if you prefer, you can sign up using your Google account for a quicker registration process.
             </div>
             <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
           </li>
@@ -173,9 +159,7 @@ function Home() {
               </svg>
             </div>
             <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
-              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
-              duis dolor. Congue suspendisse aliquam ut egestas duis dolor.
+            Click on the "Get Started" button to seamlessly navigate to the Trip Planning page, where you’ll be guided through the next steps in creating your travel itinerary.
             </div>
             <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
           </li>
@@ -199,12 +183,7 @@ function Home() {
               </svg>
             </div>
             <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
-              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
-              duis dolor. r adipiscing elit. At sit ut nulla eu stetur eget.
-              Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue
-              suspendisse aliquam ut egestas duis dolor. Congue suspendiss
-              consectetur adipiscing elit.
+            Please provide your trip details by entering the destination, the length of your stay, and your budget. This information will help us tailor your itinerary to suit your preferences and ensure that your travel plans are well-organized and within your desired spending limits.
             </div>
             <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
           </li>
@@ -228,12 +207,7 @@ function Home() {
               </svg>
             </div>
             <div className="timeline-end font-lato p-4 sm:p-5 text-custom-gray w-full sm:w-[400px] lg:w-[450px]">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. At sit ut
-              nulla eu stetur eget. Nec, ac, sollicitudin aliquam ut egestas
-              duis dolor. r adipiscing elit. At sit ut nulla eu stetur eget.
-              Nec, ac, sollicitudin aliquam ut egestas duis dolor. Congue
-              suspendisse aliquam ut egestas duis dolor. Congue suspendiss
-              consectetur adipiscing elit.
+            Click on the "Build Itinerary" button to let Travelify work its magic by utilizing the Gemini and Places APIs to create a personalized and detailed travel plan for you.
             </div>
             <hr className="bg-[#40A9EB] w-full sm:w-1/2 lg:w-1/3 mx-auto" />
           </li>
