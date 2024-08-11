@@ -1,4 +1,4 @@
-name: Frugaloo-Production
+name: Travelify-Production
 
 # Run the workflow whenever change is pushed into the main branch
 on:
